@@ -1,0 +1,47 @@
+# Dependencies & build outputs
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.vite-temp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Editor, scaffold & OS metadata
+.bolt/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local prototypes, design references, debug crops & unused legacy components
+the sun lay out/
+master_continuity_and_tomorrow_roadmap.md
+/*.jpeg
+/*.jpg
+/*.png
+public/*.png
+public/*.jpg
+public/*.jpeg
+public/images/
+src/components/space/Astrolabe.tsx
