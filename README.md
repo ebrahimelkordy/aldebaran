@@ -95,3 +95,8 @@ To persist messages submitted through the Sector `03` contact form:
 - `npm run preview` — Preview the production build locally
 - `npm run typecheck` — Run TypeScript type checking (`tsc --noEmit`)
 - `npm run lint` — Run ESLint across the codebase
+
+## Engineering & Production Plan
+
+See [`ENGINEERING_PLAN.md`](./ENGINEERING_PLAN.md) for the step-by-step production roadmap covering WebGL lifecycle/tab-sync fixes, Resend mail integration, codebase modularization, mobile portrait 3D framing, and adaptive GPU quality tiers.
+
