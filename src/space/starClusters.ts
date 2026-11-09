@@ -368,6 +368,9 @@ export function buildStarClusters() {
       astrolabe.group.position.x = ASTROLABE_OFFSET.x * Math.min(1.06, Math.max(0.76, aspect / (16 / 9)));
       astrolabe.update(time, opacity, activeDiscipline);
     },
+    refreshTextures() {
+      theForgeTitle.texture.needsUpdate = true;
+    },
     dispose() {
       nebulaGeom.dispose();
       nebulaMat.dispose();
@@ -375,6 +378,8 @@ export function buildStarClusters() {
       bgStars.mat.dispose();
       fgStars.geom.dispose();
       fgStars.mat.dispose();
+      stardust.object.geometry.dispose();
+      stardust.material.dispose();
       theForgeTitle.mesh.geometry.dispose();
       theForgeTitle.material.dispose();
       theForgeTitle.texture.dispose();

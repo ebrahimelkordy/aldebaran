@@ -576,7 +576,7 @@ export default function SystemsPanel({ getAnchors, onDisciplineChange }: Systems
         </div>
 
         <div className="flex items-center justify-between font-mono text-[7px] tracking-[0.12em] text-[#D8D4CC] uppercase mt-1.5 px-0.5">
-          <span>SUPABASE &bull; EDGE</span>
+          <span>RESEND &bull; EDGE</span>
           <span className="text-amber-200/90">99.99%</span>
         </div>
       </div>
@@ -713,7 +713,7 @@ export default function SystemsPanel({ getAnchors, onDisciplineChange }: Systems
               P-02 // REALTIME SYSTEMS
             </div>
             <p className="font-sans font-light text-[10.5px] leading-[1.4] text-[#DCD8D0] mt-0.5">
-              TypeScript, React, Supabase &amp; encrypted low-latency edge APIs.
+              TypeScript, React, Resend &amp; encrypted low-latency edge APIs.
             </p>
           </div>
         </div>

@@ -128,7 +128,7 @@ function createSplitHeadlinePlanes() {
   const uMesh = new Mesh(new PlaneGeometry(1, 1), uMat);
   uMesh.renderOrder = 3; // In front of Black Hole (2)
 
-  return { qMesh, qMat, uMesh, uMat };
+  return { qMesh, qMat, uMesh, uMat, qTex, uTex, draw };
 }
 
 export function buildBlackHole() {
@@ -166,7 +166,7 @@ export function buildBlackHole() {
   lensPlane.position.copy(BH_OFFSET);
   lensPlane.renderOrder = 2;
 
-  const { qMesh, qMat, uMesh, uMat } = createSplitHeadlinePlanes();
+  const { qMesh, qMat, uMesh, uMat, qTex, uTex, draw } = createSplitHeadlinePlanes();
   const BACK_Z = -110;
   const FRONT_Z = 110;
 
@@ -207,6 +207,19 @@ export function buildBlackHole() {
       fitScreenBox(uMesh, FRONT_Z, baseCamZ, aspect);
       qMat.uniforms.uOpacity.value = opacity;
       uMat.uniforms.uOpacity.value = opacity;
+    },
+    refreshTextures() {
+      draw();
+    },
+    dispose() {
+      lensPlane.geometry.dispose();
+      (lensPlane.material as ShaderMaterial).dispose();
+      qMesh.geometry.dispose();
+      qMat.dispose();
+      qTex.dispose();
+      uMesh.geometry.dispose();
+      uMat.dispose();
+      uTex.dispose();
     },
   };
 }

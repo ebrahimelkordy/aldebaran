@@ -73,6 +73,8 @@ export interface PlanetSystem {
   ): void;
   worldPosition(index: number, target: Vector3): Vector3;
   ringAnchorPosition(target: Vector3): Vector3;
+  refreshTextures?(): void;
+  dispose?(): void;
 }
 
 // Distinct 3D inclined orbital planes for each moon (relative to `PLANET_OFFSET`):
@@ -478,6 +480,24 @@ export function buildPlanetSystem(): PlanetSystem {
     },
     ringAnchorPosition(target) {
       return ringBeacon.getWorldPosition(target);
+    },
+    refreshTextures() {
+      selectedWork.texture.needsUpdate = true;
+    },
+    dispose() {
+      group.traverse((child) => {
+        if ('geometry' in child && (child as Mesh).geometry) {
+          (child as Mesh).geometry.dispose();
+        }
+        if ('material' in child && (child as Mesh).material) {
+          const mat = (child as Mesh).material;
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+          else mat.dispose();
+        }
+      });
+      selectedWork.texture.dispose();
+      dust.object.geometry.dispose();
+      dust.material.dispose();
     },
   };
 }

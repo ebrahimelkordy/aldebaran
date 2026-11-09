@@ -10,40 +10,56 @@ import CosmicCursor from '@/components/space/CosmicCursor';
 import CosmicBootLoader from '@/components/space/CosmicBootLoader';
 import { SECTORS } from '@/space/constants';
 import { Universe } from '@/space/universe';
+import { readSectorFromHash, spatialStore, useSpatialStore } from '@/store/spatialStore';
 
 export default function Experience() {
   const containerRef = useRef<HTMLDivElement>(null);
   const universeRef = useRef<Universe | null>(null);
-  const [sector, setSector] = useState(0);
-  const [warpTarget, setWarpTarget] = useState<number | null>(null);
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const sector = useSpatialStore((s) => s.sector);
+  const warpTarget = useSpatialStore((s) => s.warpTarget);
+  const selectedProject = useSpatialStore((s) => s.selectedProject);
+  const contextLost = useSpatialStore((s) => s.contextLost);
   const [muted, setMuted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const universe = new Universe(container, {
-      onWarpStart: (target) => {
-        playWarp();
-        setWarpTarget(target);
-        setSelectedProject(null);
-        setMenuOpen(false);
+    const initialSector = readSectorFromHash();
+    const universe = new Universe(
+      container,
+      {
+        onWarpStart: (target) => {
+          playWarp();
+          spatialStore.startWarp(target);
+          setMenuOpen(false);
+        },
+        onArrive: (index) => {
+          spatialStore.arriveSector(index);
+        },
+        onProjectClick: (index) => {
+          playClick();
+          spatialStore.setSelectedProject(index);
+        },
       },
-      onArrive: (index) => {
-        setSector(index);
-        setWarpTarget(null);
-      },
-      onProjectClick: (index) => {
-        playClick();
-        setSelectedProject(index);
-      },
-    });
+      initialSector,
+    );
     universeRef.current = universe;
     return () => {
       universe.dispose();
       universeRef.current = null;
     };
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => {
+      const targetSector = readSectorFromHash();
+      if (universeRef.current) {
+        universeRef.current.jumpInstant(targetSector);
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   useEffect(() => {
@@ -60,7 +76,7 @@ export default function Experience() {
   const selectProject = useCallback((index: number | null) => {
     startAmbientDrone();
     if (index !== null) playClick();
-    setSelectedProject(index);
+    spatialStore.setSelectedProject(index);
   }, []);
 
   const broadcast = useCallback(() => {
@@ -79,6 +95,7 @@ export default function Experience() {
   );
 
   const handleForgeDiscipline = useCallback((index: number | null) => {
+    spatialStore.setActiveDiscipline(index);
     universeRef.current?.setForgeDiscipline(index);
   }, []);
 
@@ -120,6 +137,14 @@ export default function Experience() {
     >
       <CosmicBootLoader />
       <CosmicCursor />
+      {contextLost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 font-mono text-xs tracking-widest text-[#E2A64C] select-none pointer-events-none">
+          <div className="flex items-center gap-3 border border-[#E2A64C]/30 bg-[#06080D]/95 px-6 py-4 rounded shadow-2xl">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#E2A64C] animate-ping" />
+            RECALIBRATING GPU SPATIAL CONTEXT...
+          </div>
+        </div>
+      )}
       <div ref={containerRef} className="absolute inset-0 touch-none cursor-none" />
       <div className="pointer-events-none absolute inset-0 z-[5] cinematic-vignette" aria-hidden="true" />
 

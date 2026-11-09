@@ -44,4 +44,4 @@ public/*.png
 public/*.jpg
 public/*.jpeg
 public/images/
-src/components/space/Astrolabe.tsx
+showcase/

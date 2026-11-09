@@ -1,14 +1,14 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Check, Send } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { type ScopeValue } from '@/space/content';
+import { sendTransmission } from '@/lib/transmitClient';
+import { type TransmissionScope } from '@/types/transmission';
 
 interface TransmissionPanelProps {
   onBroadcast: () => void;
 }
 
 interface TransmissionForm {
-  scope: ScopeValue;
+  scope: TransmissionScope;
   name: string;
   email: string;
   message: string;
@@ -23,7 +23,7 @@ type SubmitStatus =
 const EMPTY_FORM: TransmissionForm = { scope: 'software', name: '', email: '', message: '' };
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const DISPLAY_SCOPES: readonly { value: ScopeValue; label: string }[] = [
+const DISPLAY_SCOPES: readonly { value: TransmissionScope; label: string }[] = [
   { value: 'software', label: 'Software' },
   { value: 'uiux', label: 'Interface' },
   { value: 'identity', label: 'Identity' },
@@ -39,7 +39,9 @@ function validate(form: TransmissionForm): string | null {
 
 export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProps) {
   const [form, setForm] = useState<TransmissionForm>(EMPTY_FORM);
+  const [companyWebsite, setCompanyWebsite] = useState('');
   const [status, setStatus] = useState<SubmitStatus>({ kind: 'idle' });
+  const mountedAtRef = useRef(Date.now());
   const sending = status.kind === 'sending';
 
   const updateField = <K extends keyof TransmissionForm>(key: K, value: TransmissionForm[K]) => {
@@ -51,7 +53,6 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onBroadcast();
 
     const problem = validate(form);
     if (problem) {
@@ -60,22 +61,24 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
     }
 
     setStatus({ kind: 'sending' });
-    if (supabase) {
-      const { error } = await supabase.from('transmissions').insert({
-        scope: form.scope,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        message: form.message.trim(),
-      });
+    const dwellMs = Date.now() - mountedAtRef.current;
+    const res = await sendTransmission({
+      scope: form.scope,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      message: form.message.trim(),
+      companyWebsite,
+      dwellMs,
+    });
 
-      if (error) {
-        setStatus({ kind: 'error', message: 'Your message did not arrive. Please try again.' });
-        return;
-      }
-    } else {
-      await new Promise((resolve) => window.setTimeout(resolve, 450));
+    if (!res.ok) {
+      setStatus({ kind: 'error', message: res.error });
+      return;
     }
+
+    onBroadcast();
     setForm(EMPTY_FORM);
+    setCompanyWebsite('');
     setStatus({ kind: 'sent' });
   };
 
@@ -279,6 +282,17 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
           transformOrigin: 'bottom right',
         }}
       >
+        {/* Honeypot field for bot spam prevention */}
+        <input
+          type="text"
+          name="companyWebsite"
+          value={companyWebsite}
+          onChange={(e) => setCompanyWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0, margin: 0 }}
+        />
         {/* LEFT POD: Architectural Glass SCOPE Selector */}
         <fieldset className="w-full sm:w-[126px] shrink-0 sm:mb-1">
           <div

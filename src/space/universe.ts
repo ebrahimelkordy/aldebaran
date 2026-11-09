@@ -30,6 +30,8 @@ import { buildStarClusters, type Sector2ScreenAnchors } from '@/space/starCluste
 import { buildMainStar } from '@/space/mainStar';
 import { buildSkyDome } from '@/space/skyDome';
 import { buildStarField } from '@/space/starField';
+import { suspendAudioForBackground } from '@/space/audio';
+import { spatialStore } from '@/store/spatialStore';
 
 const UP = new Vector3(0, 1, 0);
 const TAIL_LENGTH = 3800;
@@ -97,8 +99,8 @@ export class Universe {
   private readonly starClusters = buildStarClusters();
   private readonly horizon = buildBlackHole();
   private framing = 1;
-  private readonly camPos = this.cameraFor(0);
-  private readonly lookPos = sectorCenter(0);
+  private readonly camPos = new Vector3();
+  private readonly lookPos = new Vector3();
   private readonly motionDir = new Vector3(0, 0, -1);
   private readonly sway = new Vector2();
   private readonly swayCurrent = new Vector2();
@@ -119,6 +121,7 @@ export class Universe {
   private time = 0;
   private lastFrame = performance.now();
   private frameId = 0;
+  private isContextLost = false;
   private press: PressState | null = null;
   private wheelAccum = 0;
   private wheelTimer: number | undefined;
@@ -126,7 +129,9 @@ export class Universe {
   constructor(
     private readonly container: HTMLElement,
     private readonly callbacks: UniverseCallbacks,
+    initialSector = 0,
   ) {
+    this.currentSector = Math.max(0, Math.min(SECTORS.length - 1, initialSector));
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     this.renderer.setClearColor(PALETTE.void);
@@ -149,14 +154,45 @@ export class Universe {
     );
 
     this.resize();
+    this.camPos.copy(this.cameraFor(this.currentSector));
+    this.lookPos.copy(sectorCenter(this.currentSector));
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.lookPos);
+    this.camera.updateProjectionMatrix();
+
     this.warmupGPU();
     window.addEventListener('resize', this.resize);
+    window.addEventListener('blur', this.resetInteraction);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointermove', this.handlePointerMove);
     container.addEventListener('pointerup', this.handlePointerUp);
     container.addEventListener('pointerleave', this.handlePointerLeave);
+    container.addEventListener('pointercancel', this.resetInteraction);
     container.addEventListener('wheel', this.handleWheel, { passive: false });
+    this.renderer.domElement.addEventListener('webglcontextlost', this.handleContextLost);
+    this.renderer.domElement.addEventListener('webglcontextrestored', this.handleContextRestored);
     this.frameId = requestAnimationFrame(this.frame);
+  }
+
+  jumpInstant(index: number): void {
+    if (index < 0 || index >= SECTORS.length) return;
+    this.warp = null;
+    this.warpIntensity = 0;
+    this.currentSector = index;
+    this.focusIndex = null;
+    this.yaw = 0;
+    this.pitch = 0;
+    this.targetYaw = 0;
+    this.targetPitch = 0;
+    this.velocityYaw = 0;
+    this.velocityPitch = 0;
+    this.camPos.copy(this.cameraFor(index));
+    this.lookPos.copy(sectorCenter(index));
+    this.camera.position.copy(this.camPos);
+    this.camera.lookAt(this.lookPos);
+    this.camera.up.set(0, 1, 0);
+    this.camera.updateProjectionMatrix();
   }
 
   goTo(index: number): boolean {
@@ -261,20 +297,86 @@ export class Universe {
 
   dispose() {
     cancelAnimationFrame(this.frameId);
+    this.frameId = 0;
     window.clearTimeout(this.wheelTimer);
     window.removeEventListener('resize', this.resize);
+    window.removeEventListener('blur', this.resetInteraction);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.container.removeEventListener('pointerdown', this.handlePointerDown);
     this.container.removeEventListener('pointermove', this.handlePointerMove);
     this.container.removeEventListener('pointerup', this.handlePointerUp);
     this.container.removeEventListener('pointerleave', this.handlePointerLeave);
+    this.container.removeEventListener('pointercancel', this.resetInteraction);
     this.container.removeEventListener('wheel', this.handleWheel);
+    this.renderer.domElement.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this.handleContextRestored);
+
     this.composer.dispose();
     this.aldebaran.dispose();
+    this.planets.dispose?.();
     this.starClusters.dispose();
+    this.horizon.dispose?.();
+    this.starfield.dispose?.();
+    this.skyDome.geometry.dispose();
+    if (Array.isArray(this.skyDome.material)) {
+      this.skyDome.material.forEach((m) => m.dispose());
+    } else {
+      this.skyDome.material.dispose();
+    }
     this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
+
+  private resetInteraction = () => {
+    this.press = null;
+    this.velocityYaw = 0;
+    this.velocityPitch = 0;
+    this.aldebaran.onDragEnd();
+  };
+
+  private handleVisibilityChange = () => {
+    if (document.hidden) {
+      if (this.frameId) {
+        cancelAnimationFrame(this.frameId);
+        this.frameId = 0;
+      }
+      this.resetInteraction();
+      suspendAudioForBackground(true);
+      if (this.warp) {
+        const target = this.warp.target;
+        this.jumpInstant(target);
+        this.callbacks.onArrive(target);
+      }
+    } else {
+      this.lastFrame = performance.now();
+      suspendAudioForBackground(false);
+      if (!this.frameId && !this.isContextLost) {
+        this.frameId = requestAnimationFrame(this.frame);
+      }
+    }
+  };
+
+  private handleContextLost = (event: Event) => {
+    event.preventDefault();
+    this.isContextLost = true;
+    if (this.frameId) {
+      cancelAnimationFrame(this.frameId);
+      this.frameId = 0;
+    }
+    spatialStore.setContextLost(true);
+  };
+
+  private handleContextRestored = () => {
+    this.isContextLost = false;
+    this.planets.refreshTextures?.();
+    this.starClusters.refreshTextures?.();
+    this.horizon.refreshTextures?.();
+    spatialStore.setContextLost(false);
+    this.lastFrame = performance.now();
+    this.jumpInstant(this.currentSector);
+    this.frameId = requestAnimationFrame(this.frame);
+  };
 
   private cameraFor(index: number): Vector3 {
     return sectorCenter(index).add(new Vector3(...SECTORS[index].camera).multiplyScalar(this.framing));
@@ -566,20 +668,22 @@ export class Universe {
         this.composer.render();
       }
 
-      // 3. Reset cleanly back to Sector 0 initial state
-      this.camPos.copy(this.cameraFor(0));
-      this.lookPos.copy(sectorCenter(0));
+      // 3. Reset cleanly back to this.currentSector initial state
+      this.camPos.copy(this.cameraFor(this.currentSector));
+      this.lookPos.copy(sectorCenter(this.currentSector));
       this.camera.position.copy(this.camPos);
       this.camera.lookAt(this.lookPos);
       this.camera.updateProjectionMatrix();
 
-      this.aldebaran.update(0, this.camera, 1.0, SECTORS[0].camera[2] * this.framing);
-      this.planets.update(0, null, null, 0.0, this.camera, this.framing);
-      this.starClusters.update(0, this.camera, 0.0, this.framing);
-      this.horizon.update(0, this.camera, 0.0, this.framing);
+      this.aldebaran.update(0, this.camera, this.currentSector === 0 ? 1.0 : 0.0, SECTORS[0].camera[2] * this.framing);
+      this.planets.update(0, null, null, this.currentSector === 1 ? 1.0 : 0.0, this.camera, this.framing);
+      this.starClusters.update(0, this.camera, this.currentSector === 2 ? 1.0 : 0.0, this.framing);
+      this.horizon.update(0, this.camera, this.currentSector === 3 ? 1.0 : 0.0, this.framing);
 
       this.composer.render();
-      this.aldebaran.renderOverlay(this.renderer);
+      if (this.currentSector === 0) {
+        this.aldebaran.renderOverlay(this.renderer);
+      }
     } catch (e) {
       console.warn('GPU Warmup skipped:', e);
     }

@@ -1,6 +1,7 @@
 let context: AudioContext | null = null;
 let droneGain: GainNode | null = null;
 let isMuted = false;
+let cachedNoiseBuffer: AudioBuffer | null = null;
 
 function getContext(): AudioContext {
   context ??= new AudioContext();
@@ -19,6 +20,19 @@ export function toggleAudio(): boolean {
     droneGain.gain.setTargetAtTime(target, context.currentTime, 0.4);
   }
   return isMuted;
+}
+
+export function suspendAudioForBackground(hidden: boolean): void {
+  if (!context) return;
+  if (hidden) {
+    if (context.state === 'running') {
+      context.suspend().catch(() => {});
+    }
+  } else {
+    if (context.state === 'suspended' && !isMuted) {
+      context.resume().catch(() => {});
+    }
+  }
 }
 
 export function startAmbientDrone() {
@@ -84,6 +98,20 @@ export function playClick() {
   }
 }
 
+function getOrCreateNoiseBuffer(audio: AudioContext): AudioBuffer {
+  if (cachedNoiseBuffer && cachedNoiseBuffer.sampleRate === audio.sampleRate) {
+    return cachedNoiseBuffer;
+  }
+  const bufferSize = Math.floor(audio.sampleRate * 1.5);
+  const noiseBuffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+  }
+  cachedNoiseBuffer = noiseBuffer;
+  return noiseBuffer;
+}
+
 export function playWarp() {
   if (isMuted) return;
   try {
@@ -104,16 +132,9 @@ export function playWarp() {
     subOsc.start(now);
     subOsc.stop(now + 1.85);
 
-    // Filtered atmospheric whoosh
-    const bufferSize = audio.sampleRate * 1.5;
-    const noiseBuffer = audio.createBuffer(1, bufferSize, audio.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
-    }
-
+    // Filtered atmospheric whoosh (reusing pre-cached noise buffer)
     const whiteNoise = audio.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.buffer = getOrCreateNoiseBuffer(audio);
 
     const noiseFilter = audio.createBiquadFilter();
     noiseFilter.type = 'bandpass';

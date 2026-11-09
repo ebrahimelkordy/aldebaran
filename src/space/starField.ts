@@ -142,5 +142,11 @@ export function buildStarField() {
       shared.uWarp.value = warpIntensity;
       shared.uTail.value.copy(tail);
     },
+    dispose() {
+      pointGeometry.dispose();
+      pointMaterial.dispose();
+      streakGeometry.dispose();
+      streakMaterial.dispose();
+    },
   };
 }
