@@ -32,6 +32,8 @@ import { buildSkyDome } from '@/space/skyDome';
 import { buildStarField } from '@/space/starField';
 import { suspendAudioForBackground } from '@/space/audio';
 import { spatialStore } from '@/store/spatialStore';
+import { anchorBus } from '@/engine/anchorBus';
+import type { MoonScreenAnchor } from '@/engine/types';
 
 const UP = new Vector3(0, 1, 0);
 const TAIL_LENGTH = 3800;
@@ -276,6 +278,10 @@ export class Universe {
     };
   }
 
+  getMoonScreenAnchor() {
+    return this.getSector1ScreenAnchors();
+  }
+
   setForgeDiscipline(index: number | null) {
     this.starClusters.setActiveDiscipline(index);
   }
@@ -506,6 +512,14 @@ export class Universe {
     this.updateScene(dt);
     this.composer.render();
     this.aldebaran.renderOverlay(this.renderer);
+
+    // Single-pass 60fps projection broadcast to anchorBus
+    if (this.currentSector === 1 && !this.warp) {
+      anchorBus.publish({ orbital: this.getSector1ScreenAnchors() as unknown as MoonScreenAnchor });
+    } else if (this.currentSector === 2 && !this.warp) {
+      anchorBus.publish({ astrolabe: this.starClusters.getScreenAnchors(this.camera) });
+    }
+
     this.frameId = requestAnimationFrame(this.frame);
   };
 
@@ -615,10 +629,31 @@ export class Universe {
   private updateScene(dt: number) {
     const tail = this.motionDir.clone().multiplyScalar(this.warpIntensity * TAIL_LENGTH);
     this.starfield.update(this.time, this.warpIntensity, tail);
-    this.aldebaran.update(this.time, this.camera, this.sectorWeight(0), SECTORS[0].camera[2] * this.framing);
-    this.planets.update(this.time, this.hoverIndex, this.focusIndex, this.sectorWeight(1), this.camera, this.framing);
-    this.starClusters.update(this.time, this.camera, this.sectorWeight(2), this.framing);
-    this.horizon.update(this.time, this.camera, this.sectorWeight(3), this.framing);
+
+    const w0 = this.sectorWeight(0);
+    this.aldebaran.group.visible = w0 > 0.001;
+    if (w0 > 0.001) {
+      this.aldebaran.update(this.time, this.camera, w0, SECTORS[0].camera[2] * this.framing);
+    }
+
+    const w1 = this.sectorWeight(1);
+    this.planets.group.visible = w1 > 0.001;
+    if (w1 > 0.001) {
+      this.planets.update(this.time, this.hoverIndex, this.focusIndex, w1, this.camera, this.framing);
+    }
+
+    const w2 = this.sectorWeight(2);
+    this.starClusters.group.visible = w2 > 0.001;
+    if (w2 > 0.001) {
+      this.starClusters.update(this.time, this.camera, w2, this.framing);
+    }
+
+    const w3 = this.sectorWeight(3);
+    this.horizon.group.visible = w3 > 0.001;
+    if (w3 > 0.001) {
+      this.horizon.update(this.time, this.camera, w3, this.framing);
+    }
+
     this.updateShockwaves(dt);
   }
 

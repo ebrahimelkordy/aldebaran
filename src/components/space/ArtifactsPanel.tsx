@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { PROJECTS } from '@/space/content';
+import { useAnchorSubscription } from '@/hooks/useAnchorSubscription';
 
 interface Sector1Anchors {
   ringX: number;
@@ -42,51 +43,57 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
   const moonDotRef = useRef<SVGCircleElement>(null);
   const reticleDivRef = useRef<HTMLDivElement>(null);
 
+  const updateOrbitalSvg = (a: Sector1Anchors) => {
+    // Fixed right-hand docks aligned with P-00 NOVA PLATFORM (x=54.3%, y=51.5%)
+    // and P-01 LYRA CRM (x=61.8%, y=70.6%)
+    const rx = Math.max(80, Math.min(510, a.ringX * 1000));
+    const ry = Math.max(200, Math.min(760, a.ringY * 1000));
+    const rDockX = 542;
+    const rDockY = 515;
+    const rElbowX = Math.min(rDockX - 28, Math.max(rx + 28, (rx + rDockX) * 0.56));
+
+    if (ringPolyRef.current) {
+      ringPolyRef.current.setAttribute('points', `${rx.toFixed(1)},${ry.toFixed(1)} ${rElbowX.toFixed(1)},${rDockY} ${rDockX},${rDockY}`);
+    }
+    if (ringDotRef.current) {
+      ringDotRef.current.setAttribute('cx', rx.toFixed(1));
+      ringDotRef.current.setAttribute('cy', ry.toFixed(1));
+    }
+
+    const mx = Math.max(30, Math.min(580, a.moonX * 1000));
+    const my = Math.max(120, Math.min(890, a.moonY * 1000));
+    const mDockX = 618;
+    const mDockY = 706;
+    const mElbowX = Math.min(mDockX - 28, Math.max(mx + 32, mDockX - Math.abs(mDockY - my) * 0.48));
+    const op = a.moonBehindPlanet ? '0.22' : '0.72';
+
+    if (moonPolyRef.current) {
+      moonPolyRef.current.setAttribute('points', `${mx.toFixed(1)},${my.toFixed(1)} ${mElbowX.toFixed(1)},${mDockY} ${mDockX},${mDockY}`);
+      moonPolyRef.current.setAttribute('stroke-opacity', op);
+    }
+    if (moonDotRef.current) {
+      moonDotRef.current.setAttribute('cx', mx.toFixed(1));
+      moonDotRef.current.setAttribute('cy', my.toFixed(1));
+      moonDotRef.current.setAttribute('opacity', a.moonBehindPlanet ? '0.25' : '1');
+    }
+    if (reticleDivRef.current) {
+      reticleDivRef.current.style.left = `${(a.moonX * 100).toFixed(2)}%`;
+      reticleDivRef.current.style.top = `${(a.moonY * 100).toFixed(2)}%`;
+      reticleDivRef.current.style.opacity = a.moonBehindPlanet ? '0.18' : '0.85';
+    }
+  };
+
+  useAnchorSubscription('orbital', (anchors) => {
+    updateOrbitalSvg(anchors as unknown as Sector1Anchors);
+  });
+
   useEffect(() => {
     if (!getAnchors) return;
     let rafId = 0;
 
     const tick = () => {
       const a = getAnchors();
-      if (a) {
-        // Fixed right-hand docks aligned with P-00 NOVA PLATFORM (x=54.3%, y=51.5%)
-        // and P-01 LYRA CRM (x=61.8%, y=70.6%)
-        const rx = Math.max(80, Math.min(510, a.ringX * 1000));
-        const ry = Math.max(200, Math.min(760, a.ringY * 1000));
-        const rDockX = 542;
-        const rDockY = 515;
-        const rElbowX = Math.min(rDockX - 28, Math.max(rx + 28, (rx + rDockX) * 0.56));
-
-        if (ringPolyRef.current) {
-          ringPolyRef.current.setAttribute('points', `${rx.toFixed(1)},${ry.toFixed(1)} ${rElbowX.toFixed(1)},${rDockY} ${rDockX},${rDockY}`);
-        }
-        if (ringDotRef.current) {
-          ringDotRef.current.setAttribute('cx', rx.toFixed(1));
-          ringDotRef.current.setAttribute('cy', ry.toFixed(1));
-        }
-
-        const mx = Math.max(30, Math.min(580, a.moonX * 1000));
-        const my = Math.max(120, Math.min(890, a.moonY * 1000));
-        const mDockX = 618;
-        const mDockY = 706;
-        const mElbowX = Math.min(mDockX - 28, Math.max(mx + 32, mDockX - Math.abs(mDockY - my) * 0.48));
-        const op = a.moonBehindPlanet ? '0.22' : '0.72';
-
-        if (moonPolyRef.current) {
-          moonPolyRef.current.setAttribute('points', `${mx.toFixed(1)},${my.toFixed(1)} ${mElbowX.toFixed(1)},${mDockY} ${mDockX},${mDockY}`);
-          moonPolyRef.current.setAttribute('stroke-opacity', op);
-        }
-        if (moonDotRef.current) {
-          moonDotRef.current.setAttribute('cx', mx.toFixed(1));
-          moonDotRef.current.setAttribute('cy', my.toFixed(1));
-          moonDotRef.current.setAttribute('opacity', a.moonBehindPlanet ? '0.25' : '1');
-        }
-        if (reticleDivRef.current) {
-          reticleDivRef.current.style.left = `${(a.moonX * 100).toFixed(2)}%`;
-          reticleDivRef.current.style.top = `${(a.moonY * 100).toFixed(2)}%`;
-          reticleDivRef.current.style.opacity = a.moonBehindPlanet ? '0.18' : '0.85';
-        }
-      }
+      if (a) updateOrbitalSvg(a);
       rafId = requestAnimationFrame(tick);
     };
 

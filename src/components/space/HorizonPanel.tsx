@@ -1,34 +1,10 @@
-import { useEffect, useState } from 'react';
+import { LiveReadout } from '@/components/primitives/LiveReadout';
 
 interface HorizonPanelProps {
   onEngage: () => void;
 }
 
 export default function HorizonPanel({ onEngage }: HorizonPanelProps) {
-  const [telemetry, setTelemetry] = useState({
-    x: '+45.13',
-    y: '-18.20',
-    z: '+8.70',
-    vel: '14.5',
-  });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const t = Date.now() * 0.001;
-      const xVal = (45.13 + Math.sin(t) * 0.04).toFixed(2);
-      const yVal = (-18.2 + Math.cos(t * 1.15) * 0.04).toFixed(2);
-      const zVal = (8.7 + Math.sin(t * 0.85) * 0.03).toFixed(2);
-      const velVal = (14.5 + Math.sin(t * 1.6) * 0.1).toFixed(1);
-      setTelemetry({
-        x: `+${xVal}`,
-        y: `${yVal}`,
-        z: `+${zVal}`,
-        vel: velVal,
-      });
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <section
       className="pointer-events-none absolute inset-0 overflow-hidden select-none z-20"
@@ -171,15 +147,45 @@ export default function HorizonPanel({ onEngage }: HorizonPanelProps) {
             <circle cx="55" cy="55" r="43" fill="none" stroke="rgba(236,232,225,0.1)" strokeWidth="0.6" />
           </svg>
           <div className="relative z-10 font-mono text-[9.5px] leading-[1.45] tracking-[0.04em] text-[#EAE6DE] text-left">
-            <div>X: {telemetry.x}°</div>
-            <div>Y: {telemetry.y}°</div>
-            <div>Z: {telemetry.z}°</div>
+            <div>
+              X:{' '}
+              <LiveReadout
+                initial="+45.13"
+                intervalMs={500}
+                getValue={(t) => `+${(45.13 + Math.sin(t) * 0.04).toFixed(2)}`}
+              />
+              °
+            </div>
+            <div>
+              Y:{' '}
+              <LiveReadout
+                initial="-18.20"
+                intervalMs={500}
+                getValue={(t) => (-18.2 + Math.cos(t * 1.15) * 0.04).toFixed(2)}
+              />
+              °
+            </div>
+            <div>
+              Z:{' '}
+              <LiveReadout
+                initial="+8.70"
+                intervalMs={500}
+                getValue={(t) => `+${(8.7 + Math.sin(t * 0.85) * 0.03).toFixed(2)}`}
+              />
+              °
+            </div>
           </div>
         </div>
 
         {/* VEL Pill */}
         <div className="mt-2.5 ml-1 rounded-full border border-white/15 bg-[#070a12]/75 backdrop-blur-md px-3.5 py-1 font-mono text-[9.5px] tracking-[0.08em] text-[#EAE6DE]">
-          VEL: {telemetry.vel} KM/S
+          VEL:{' '}
+          <LiveReadout
+            initial="14.5"
+            intervalMs={500}
+            getValue={(t) => (14.5 + Math.sin(t * 1.6) * 0.1).toFixed(1)}
+          />{' '}
+          KM/S
         </div>
 
         {/* SYS / LOC Rounded Frame */}
