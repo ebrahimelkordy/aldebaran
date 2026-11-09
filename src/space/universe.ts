@@ -16,7 +16,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {
   FOCUS_OFFSET,
-  MAX_PIXEL_RATIO,
   PALETTE,
   REST_FOV,
   SECTORS,
@@ -33,7 +32,8 @@ import { buildStarField } from '@/space/starField';
 import { suspendAudioForBackground } from '@/space/audio';
 import { spatialStore } from '@/store/spatialStore';
 import { anchorBus } from '@/engine/anchorBus';
-import type { MoonScreenAnchor } from '@/engine/types';
+import type { MoonScreenAnchor, QualitySettings, QualityTier } from '@/engine/types';
+import { detectDeviceTier, FPSMonitor, QUALITY_TIERS } from '@/engine/quality';
 
 const UP = new Vector3(0, 1, 0);
 const TAIL_LENGTH = 3800;
@@ -127,6 +127,10 @@ export class Universe {
   private press: PressState | null = null;
   private wheelAccum = 0;
   private wheelTimer: number | undefined;
+  private qualityTier: QualityTier = detectDeviceTier();
+  private qualitySettings: QualitySettings = QUALITY_TIERS[this.qualityTier];
+  private readonly fpsMonitor: FPSMonitor;
+  private readonly bloomPass: UnrealBloomPass;
 
   constructor(
     private readonly container: HTMLElement,
@@ -135,16 +139,26 @@ export class Universe {
   ) {
     this.currentSector = Math.max(0, Math.min(SECTORS.length - 1, initialSector));
     this.renderer = new WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.qualitySettings.maxPixelRatio));
     this.renderer.setClearColor(PALETTE.void);
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.6, 0.35, 1.0));
+    this.bloomPass = new UnrealBloomPass(
+      this.qualitySettings.bloomDownsample ? new Vector2(0.5, 0.5) : new Vector2(1, 1),
+      0.6,
+      0.35,
+      1.0,
+    );
+    this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
     this.renderer.domElement.style.display = 'block';
     container.appendChild(this.renderer.domElement);
+
+    this.fpsMonitor = new FPSMonitor(this.qualityTier, (newTier) => {
+      this.applyQualityTier(newTier);
+    });
 
     this.scene.add(
       this.skyDome,
@@ -504,6 +518,7 @@ export class Universe {
   };
 
   private frame = (now: number) => {
+    this.fpsMonitor.tick(now);
     const dt = Math.min((now - this.lastFrame) / 1000, 0.05);
     this.lastFrame = now;
     this.time += dt;
@@ -674,40 +689,26 @@ export class Universe {
     });
   }
 
+  private applyQualityTier(newTier: QualityTier) {
+    this.qualityTier = newTier;
+    this.qualitySettings = QUALITY_TIERS[newTier];
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.qualitySettings.maxPixelRatio));
+    if (this.bloomPass) {
+      if (this.qualitySettings.bloomDownsample) {
+        this.bloomPass.resolution.set(0.5, 0.5);
+      } else {
+        this.bloomPass.resolution.set(1.0, 1.0);
+      }
+    }
+  }
+
   private warmupGPU() {
     try {
-      // 1. Pre-compile shader programs for each sector viewpoint
-      for (let i = 0; i < SECTORS.length; i++) {
-        this.camera.position.copy(this.cameraFor(i));
-        this.camera.lookAt(sectorCenter(i));
-        this.camera.updateMatrixWorld();
-        this.renderer.compile(this.scene, this.camera);
-      }
-
-      // 2. Perform 1 warmup render pass for each sector through composer
-      // This forces the GPU driver to compile & link all shader programs, textures,
-      // and post-processing buffers (UnrealBloomPass, OutputPass, ACESFilmic)
-      for (let i = 0; i < SECTORS.length; i++) {
-        const cam = this.cameraFor(i);
-        const look = sectorCenter(i);
-        this.camera.position.copy(cam);
-        this.camera.lookAt(look);
-        this.camera.updateMatrixWorld();
-
-        this.aldebaran.update(0, this.camera, i === 0 ? 1 : 0.05, SECTORS[0].camera[2] * this.framing);
-        this.planets.update(0, null, null, i === 1 ? 1 : 0.05, this.camera, this.framing);
-        this.starClusters.update(0, this.camera, i === 2 ? 1 : 0.05, this.framing);
-        this.horizon.update(0, this.camera, i === 3 ? 1 : 0.05, this.framing);
-
-        this.composer.render();
-      }
-
-      // 3. Reset cleanly back to this.currentSector initial state
-      this.camPos.copy(this.cameraFor(this.currentSector));
-      this.lookPos.copy(sectorCenter(this.currentSector));
-      this.camera.position.copy(this.camPos);
-      this.camera.lookAt(this.lookPos);
-      this.camera.updateProjectionMatrix();
+      // 1. Immediately compile & render ONLY the initial active sector for instant boot
+      this.camera.position.copy(this.cameraFor(this.currentSector));
+      this.camera.lookAt(sectorCenter(this.currentSector));
+      this.camera.updateMatrixWorld();
+      this.renderer.compile(this.scene, this.camera);
 
       this.aldebaran.update(0, this.camera, this.currentSector === 0 ? 1.0 : 0.0, SECTORS[0].camera[2] * this.framing);
       this.planets.update(0, null, null, this.currentSector === 1 ? 1.0 : 0.0, this.camera, this.framing);
@@ -717,6 +718,39 @@ export class Universe {
       this.composer.render();
       if (this.currentSector === 0) {
         this.aldebaran.renderOverlay(this.renderer);
+      }
+
+      // 2. Non-blocking asynchronous compilation of remaining sectors via requestIdleCallback/timer slices
+      const otherSectors = [0, 1, 2, 3].filter((i) => i !== this.currentSector);
+      const warmupNext = (index: number) => {
+        if (index >= otherSectors.length || this.isContextLost) return;
+        const sec = otherSectors[index];
+        try {
+          const dummyCam = this.camera.clone();
+          dummyCam.position.copy(this.cameraFor(sec));
+          dummyCam.lookAt(sectorCenter(sec));
+          dummyCam.updateMatrixWorld();
+          this.renderer.compile(this.scene, dummyCam);
+        } catch {
+          // ignore warmup errors
+        }
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          (window as unknown as { requestIdleCallback: (cb: () => void, opts: { timeout: number }) => void }).requestIdleCallback(
+            () => warmupNext(index + 1),
+            { timeout: 800 },
+          );
+        } else {
+          setTimeout(() => warmupNext(index + 1), 60);
+        }
+      };
+
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        (window as unknown as { requestIdleCallback: (cb: () => void, opts: { timeout: number }) => void }).requestIdleCallback(
+          () => warmupNext(0),
+          { timeout: 800 },
+        );
+      } else {
+        setTimeout(() => warmupNext(0), 100);
       }
     } catch (e) {
       console.warn('GPU Warmup skipped:', e);

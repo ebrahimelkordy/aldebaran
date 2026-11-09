@@ -49,5 +49,14 @@ export default defineConfig(({ mode }) => {
       include: ['three'],
       exclude: ['lucide-react'],
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'three-core': ['three'],
+          },
+        },
+      },
+    },
   };
 });

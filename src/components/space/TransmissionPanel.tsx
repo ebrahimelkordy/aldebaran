@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Check, Send, ChevronDown, X } from 'lucide-react';
+import { Check, Send, X } from 'lucide-react';
 import { sendTransmission } from '@/lib/transmitClient';
 import { type TransmissionScope } from '@/types/transmission';
 import { useViewportMode } from '@/hooks/useViewportMode';
