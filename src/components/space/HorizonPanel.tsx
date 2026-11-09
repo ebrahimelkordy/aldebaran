@@ -295,8 +295,8 @@ export default function HorizonPanel({ onEngage }: HorizonPanelProps) {
         </div>
       </div>
 
-      {/* 3. Bottom-Left EXPLORE Golden Orb Button (z-30 in front of bottom-left corner of A) */}
-      <div className="pointer-events-auto absolute bottom-[3.8%] left-[4.8%] z-30 flex items-center justify-center">
+      {/* 3. Bottom-Left EXPLORE Golden Orb Button (Desktop only — hidden on mobile to prevent duplicate button) */}
+      <div className="pointer-events-auto absolute bottom-[3.8%] left-[4.8%] z-30 hidden sm:flex items-center justify-center">
         <button
           type="button"
           onClick={onEngage}

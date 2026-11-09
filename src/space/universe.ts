@@ -15,7 +15,6 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {
-  FOCUS_OFFSET,
   PALETTE,
   REST_FOV,
   SECTORS,
@@ -540,8 +539,28 @@ export class Universe {
 
   private desiredView(): { pos: Vector3; look: Vector3 } {
     if (this.focusIndex !== null) {
-      const look = this.planets.worldPosition(this.focusIndex, new Vector3());
-      return { pos: look.clone().add(new Vector3(...FOCUS_OFFSET)), look };
+      const moonPos = this.planets.worldPosition(this.focusIndex, new Vector3());
+      const aspect = this.camera.aspect || 16 / 9;
+      const isPortrait = aspect < 0.95;
+      const isFlagship = this.focusIndex === 0;
+      const dist = isFlagship ? 640 : 440;
+
+      if (isPortrait) {
+        // Mobile portrait: position the moon gracefully in the upper 30% of the screen
+        // so the bottom telemetry drawer never occludes or blurs over it
+        const yOffset = isFlagship ? 140 : 110;
+        const lookTarget = new Vector3(moonPos.x, moonPos.y - yOffset, moonPos.z);
+        const camPos = new Vector3(moonPos.x, moonPos.y - yOffset, moonPos.z + dist);
+        return { pos: camPos, look: lookTarget };
+      } else {
+        // Desktop landscape: position the moon in the open upper-right (x ~ 60%, y ~ 45%)
+        // safely separated from the bottom-left telemetry drawer (x: 4%..34%)
+        const xOffset = isFlagship ? 140 : 100;
+        const yOffset = isFlagship ? 40 : 25;
+        const lookTarget = new Vector3(moonPos.x - xOffset, moonPos.y - yOffset, moonPos.z);
+        const camPos = new Vector3(moonPos.x - xOffset, moonPos.y - yOffset, moonPos.z + dist);
+        return { pos: camPos, look: lookTarget };
+      }
     }
     return { pos: this.cameraFor(this.currentSector), look: sectorCenter(this.currentSector) };
   }

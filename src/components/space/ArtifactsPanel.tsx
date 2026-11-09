@@ -421,8 +421,12 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
         </button>
       </div>
 
-      {/* MOBILE LUXURY SNAP CAROUSEL (< 1024px) */}
-      <div className="pointer-events-auto lg:hidden absolute inset-x-0 bottom-[68px] z-20">
+      {/* MOBILE LUXURY SNAP CAROUSEL (< 1024px) - Hidden when project detail drawer is active */}
+      <div
+        className={`pointer-events-auto lg:hidden absolute inset-x-0 bottom-[68px] z-20 transition-all duration-300 ${
+          selected ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
         <div className="flex gap-3 px-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2">
           {PROJECTS.map((project, index) => {
             const isSelected = selectedIndex === index;
@@ -474,37 +478,37 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
       {selected && selectedIndex !== null && (
         <aside
           key={selected.code}
-          className="pointer-events-auto animate-fade-up hud-panel chamfer-clip absolute left-6 bottom-8 lg:left-[4.4%] lg:bottom-[10%] w-[calc(100%-3rem)] max-w-[430px] p-6 md:p-7 z-40 shadow-2xl"
+          className="pointer-events-auto animate-fade-up hud-panel chamfer-clip absolute left-4 right-4 bottom-[68px] lg:left-[4.4%] lg:right-auto lg:bottom-[10%] lg:w-[430px] p-4 sm:p-6 lg:p-7 z-40 shadow-2xl max-h-[42dvh] overflow-y-auto"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-300/90">
+              <p className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-amber-300/90">
                 {selected.code} // {selected.body.orbit ? 'ORBITAL MODULE' : 'FLAGSHIP CORE'}
               </p>
-              <h3 className="font-tall font-bold mt-2 text-4xl sm:text-5xl uppercase tracking-tight text-[#F5F2EB] leading-none">
+              <h3 className="font-tall font-bold mt-1 text-2xl sm:text-3xl lg:text-5xl uppercase tracking-tight text-[#F5F2EB] leading-none">
                 {selected.name}
               </h3>
-              <p className="mt-1.5 font-mono text-[11px] text-neutral-400">{selected.subtitle}</p>
+              <p className="mt-1 font-mono text-[10px] sm:text-[11px] text-neutral-400">{selected.subtitle}</p>
             </div>
             <button
               type="button"
               aria-label="Close project details"
               onClick={() => onSelect(null)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-neutral-300 transition duration-300 hover:border-amber-300 hover:text-amber-200 hover:bg-amber-300/10 cursor-pointer"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-neutral-300 transition duration-300 hover:border-amber-300 hover:text-amber-200 hover:bg-amber-300/10 cursor-pointer active:scale-95"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
-          <p className="mt-5 font-sans text-sm leading-relaxed text-neutral-300">{selected.detail}</p>
+          <p className="mt-3 sm:mt-5 font-sans text-xs sm:text-sm leading-relaxed text-neutral-300">{selected.detail}</p>
 
-          <dl className="mt-6 grid grid-cols-2 gap-5 border-t border-white/10 pt-5">
+          <dl className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-5 border-t border-white/10 pt-3 sm:pt-5">
             {selected.metrics.map((metric) => (
               <div key={metric.label}>
-                <dt className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-neutral-400">
+                <dt className="font-mono text-[9px] sm:text-[9.5px] uppercase tracking-[0.18em] text-neutral-400">
                   {metric.label}
                 </dt>
-                <dd className="font-tall font-bold mt-1 text-2xl text-amber-200 tracking-wide">
+                <dd className="font-tall font-bold mt-0.5 sm:mt-1 text-xl sm:text-2xl text-amber-200 tracking-wide">
                   {metric.value}
                 </dd>
               </div>
