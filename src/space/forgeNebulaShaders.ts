@@ -89,10 +89,19 @@ export const forgeNebulaFragmentShader = /* glsl */ `
     vec3 rd = normalize(vWorldPos - uCam);
     float invRdZ = abs(rd.z) > 0.08 ? (1.0 / rd.z) : -1.0;
 
-    // Living solar-style surface convection speed (smooth, visible, non-exaggerated plasma boil)
+    // Living solar-style surface convection speed
     float evo = uTime * 0.64;
 
-    // --- LAYER 1 (DEEP CAVERN SHELL, dz = -175): Royal Sapphire-Violet Ionized Interior & Summit Glow ---
+    // Projected mid coordinates for sculpting the central monumental typography rift
+    float tMid = (0.0 - ro.z) * invRdZ;
+    vec2 pMid = (ro.xy + rd.xy * max(tMid, 0.0)) / vec2(680.0, 650.0);
+
+    // Deep cosmic rift window directly behind "THE FORGE" typography:
+    // Centered at pMid (-0.12, -0.02) corresponding to the exact 3D screen space of the monumental text
+    vec2 pText = vec2((pMid.x - (-0.12)) * 2.5, (pMid.y - (-0.02)) * 2.9);
+    float textCavity = exp(-dot(pText, pText) * 4.6);
+
+    // --- LAYER 1 (DEEP CAVERN SHELL, dz = -175): Vivid Ionized Amethyst & Electric Sapphire Core ---
     float tBack = (-175.0 - ro.z) * invRdZ;
     vec2 pBack = (ro.xy + rd.xy * max(tBack, 0.0)) / vec2(740.0, 690.0);
     vec2 rpB = vec2(pBack.x * 0.94 - pBack.y * 0.34, pBack.x * 0.34 + pBack.y * 0.94);
@@ -103,59 +112,71 @@ export const forgeNebulaFragmentShader = /* glsl */ `
 
     float bRad = length(pBack * vec2(0.92, 0.84));
     float bEnv = (1.0 - smoothstep(0.18, 0.94, bRad - (bw1 - 0.5) * 0.28));
-    float bDensity = smoothstep(0.28, 0.78, bGas) * bEnv;
+    float bDensity = smoothstep(0.28, 0.78, bGas) * bEnv * (1.0 - textCavity * 0.96);
 
-    // Luminous sapphire-periwinkle & royal amethyst heart matching ref_sector_02.jpeg right-center cavern
-    float cavernMask = exp(-dot(pBack - vec2(0.16, -0.02), pBack - vec2(0.16, -0.02)) * 4.2);
-    float summitGlow = exp(-dot(pBack - vec2(-0.04, 0.28), pBack - vec2(-0.04, 0.28)) * 5.0);
+    // Vivid cosmic ionization heart
+    float cavernMask = exp(-dot(pBack - vec2(0.18, -0.02), pBack - vec2(0.18, -0.02)) * 4.2);
+    vec2 summitPos = vec2(0.06, 0.40);
+    float summitGlow = exp(-dot(pBack - summitPos, pBack - summitPos) * 6.5);
 
-    vec3 backCol = mix(vec3(0.06, 0.05, 0.11), vec3(0.26, 0.22, 0.48), smoothstep(0.25, 0.75, bGas));
-    backCol = mix(backCol, vec3(0.38, 0.42, 0.82), cavernMask * smoothstep(0.32, 0.72, bGas));
-    backCol += vec3(1.15, 0.86, 0.52) * summitGlow * smoothstep(0.38, 0.82, bGas) * 0.85;
+    // Deep interstellar void -> Vivid ionized ultraviolet -> Electric cobalt-sapphire
+    vec3 colDeepVoid   = vec3(0.005, 0.007, 0.016);
+    vec3 colIonViolet  = vec3(0.20, 0.08, 0.46);
+    vec3 colCobaltRim  = vec3(0.12, 0.45, 0.92);
+    vec3 colSummitCyan = vec3(0.28, 0.85, 1.35);
+
+    vec3 backCol = mix(colDeepVoid, colIonViolet, smoothstep(0.25, 0.75, bGas));
+    backCol = mix(backCol, colCobaltRim, cavernMask * smoothstep(0.30, 0.70, bGas) * 0.88);
+    backCol += colSummitCyan * summitGlow * smoothstep(0.35, 0.80, bGas) * 0.85;
 
     vec3 compCol = backCol * bDensity * 0.92;
     float compAlpha = bDensity * 0.78;
 
-    // --- LAYER 2 (MAIN SCULPTED CLIFF SHELL, dz = 0): Sun-Grade Boiling Plasma Filaments & Carina Cliffs ---
-    float tMid = (0.0 - ro.z) * invRdZ;
-    vec2 pMid = (ro.xy + rd.xy * max(tMid, 0.0)) / vec2(680.0, 650.0);
-    // Asymmetric arch rising from lower-right toward upper-center-left
+    // --- LAYER 2 (MAIN SCULPTED CLIFF SHELL, dz = 0): Vivid Electric Cyan (O-III) & Cosmic Violet Gas ---
     vec2 rpM = vec2(pMid.x * 0.92 + pMid.y * 0.39, -pMid.x * 0.39 + pMid.y * 0.92);
 
     vec3 qM = vec3(rpM * 2.45, 1.3);
-    // Exact solar-grade counter-warped FBM convection & glowing vein filaments!
     float mw1 = fbm5(qM + vec3(0.0, evo * 0.25, evo * 0.18));
     float mw2 = fbm5(qM * 0.92 + 7.0 - vec3(evo * 0.21, -evo * 0.12, 0.0));
     float mBoil = fbm5(qM * 1.68 + 2.15 * vec3(mw1 - 0.5, mw2 - 0.5, mw1 - mw2));
 
     float rawVein = 1.0 - abs(2.0 * fbm5(qM * 1.52 + 1.35 * vec3(mw2 - 0.5, mw1 - 0.5, evo * 0.09)) - 1.0);
-    float plasmaRibbon = pow(clamp(rawVein, 1e-4, 1.0), 4.2);
-    float searingVein = pow(clamp(rawVein, 1e-4, 1.0), 8.2);
+    float plasmaRibbon = pow(clamp(rawVein, 1e-4, 1.0), 4.5);
+    float searingVein = pow(clamp(rawVein, 1e-4, 1.0), 9.5);
 
-    // Sculpted crescent cliff around the inner sapphire cavern
+    // Sculpted crescent cliff around the inner sapphire-amethyst amphitheater
     float mRad = length((pMid - vec2(0.05, 0.02)) * vec2(0.96, 0.82));
     float mEnv = 1.0 - smoothstep(0.16, 0.92, mRad - (mw1 - 0.5) * 0.34);
     float ridgeArc = exp(-pow(max(abs(length(pMid - vec2(0.08, -0.04)) - 0.36) * 2.6, 1e-4), 1.6));
 
     float mStructure = smoothstep(0.26, 0.78, mBoil * 0.82 + plasmaRibbon * 0.42) * mEnv * (0.48 + 0.72 * ridgeArc);
+    // Smoothly carve away gas in the central text cavity so typography sits on pure void
+    mStructure *= (1.0 - textCavity * 0.96);
 
-    // Rich chromatic transition: Smoked Plum -> Rose-Copper -> Molten Amber-Gold -> Searing Champagne Vein
-    vec3 colPlum   = vec3(0.18, 0.10, 0.24);
-    vec3 colCopper = vec3(0.76, 0.34, 0.26);
-    vec3 colGold   = vec3(1.42, 0.84, 0.38);
-    vec3 colHot    = vec3(2.35, 1.85, 1.18);
+    // Vivid deep-space emission spectrum (Astronomical O-III & H-beta lines):
+    // Cosmic Amethyst -> Saturated Ultramarine -> Radiant Electric Cyan/Teal -> Clean Cyan Starlight
+    vec3 colAmethyst     = vec3(0.25, 0.08, 0.52);
+    vec3 colUltramarine  = vec3(0.06, 0.38, 0.82);
+    vec3 colElectricCyan = vec3(0.08, 0.75, 0.92);
+    vec3 colStarlight    = vec3(0.55, 1.10, 1.45);
 
     float heat = clamp(smoothstep(0.32, 0.76, mBoil) * (0.55 + 0.65 * ridgeArc) + plasmaRibbon * 0.48, 0.0, 1.35);
-    vec3 midCol = mix(colPlum, colCopper, smoothstep(0.12, 0.46, heat));
-    midCol = mix(midCol, colGold, smoothstep(0.42, 0.84, heat));
-    midCol = mix(midCol, colHot, clamp(searingVein * 1.15 + smoothstep(0.86, 1.28, heat) * 0.65, 0.0, 1.0));
+    heat *= (1.0 - textCavity * 0.95);
 
-    // Blend Layer 2 over Layer 1 with genuine opacity occlusion
-    float midAlpha = clamp(mStructure * 0.88, 0.0, 0.95);
+    vec3 midCol = mix(colAmethyst, colUltramarine, smoothstep(0.10, 0.44, heat));
+    midCol = mix(midCol, colElectricCyan, smoothstep(0.40, 0.78, heat));
+    midCol = mix(midCol, colStarlight, clamp(searingVein * 1.25 + smoothstep(0.88, 1.30, heat) * 0.45, 0.0, 1.0));
+
+    // Blend Layer 2 over Layer 1
+    float midAlpha = clamp(mStructure * 0.90, 0.0, 0.95);
     compCol = compCol * (1.0 - midAlpha) + midCol * midAlpha;
     compAlpha = compAlpha + midAlpha * (1.0 - compAlpha);
 
-    // --- LAYER 3 (FOREGROUND DARK BOK-DUST & LIVING GOLDEN RIM, dz = +135) ---
+    // Completely clear out any residual emission inside the text window
+    compCol *= (1.0 - textCavity * 0.94);
+    compAlpha *= (1.0 - textCavity * 0.90);
+
+    // --- LAYER 3 (FOREGROUND DARK BOK-DUST & LIVING CYAN RIM, dz = +135) ---
     float tFront = (135.0 - ro.z) * invRdZ;
     vec2 pFront = (ro.xy + rd.xy * max(tFront, 0.0)) / vec2(650.0, 620.0);
     vec3 qF = vec3(pFront * 2.65, 3.7);
@@ -163,24 +184,27 @@ export const forgeNebulaFragmentShader = /* glsl */ `
     float fw1 = fbm3(qF + vec3(evo * 0.16, -evo * 0.19, 0.0));
     float fDustRaw = fbm5(qF * 1.45 + 1.5 * vec3(fw1 - 0.5, -fw1 + 0.5, evo * 0.08));
     float fRimVein = 1.0 - abs(2.0 * fbm3(qF * 1.8 + vec3(fw1, 0.0, -evo * 0.14)) - 1.0);
-    float fGoldEdge = pow(clamp(fRimVein, 1e-4, 1.0), 5.5);
+    float fCyanEdge = pow(clamp(fRimVein, 1e-4, 1.0), 5.5);
 
-    // Dark obsidian dust lanes concentrated on upper-left & lower-center folds (matching ref_sector_02.jpeg)
+    // Dark obsidian dust lanes concentrated on periphery folds
     float fRad = length((pFront - vec2(-0.08, 0.06)) * vec2(0.95, 0.85));
     float fMask = (1.0 - smoothstep(0.15, 0.86, fRad)) * smoothstep(-0.45, 0.35, -pFront.x + pFront.y * 0.35);
-    float dustAlpha = smoothstep(0.46, 0.82, fDustRaw) * fMask * 0.84;
+    float dustAlpha = smoothstep(0.46, 0.82, fDustRaw) * fMask * 0.84 * (1.0 - textCavity * 0.85);
 
-    // Dark obsidian dust absorbs background glow while its photoevaporating rim shimmers with warm gold!
-    vec3 dustCol = vec3(0.018, 0.016, 0.030) + vec3(1.25, 0.74, 0.34) * fGoldEdge * smoothstep(0.40, 0.65, fDustRaw) * 0.85;
+    // Dark obsidian dust absorbs background glow while its rim shimmers with vibrant electric cyan
+    vec3 dustCol = vec3(0.005, 0.007, 0.014) + vec3(0.14, 0.78, 0.95) * fCyanEdge * smoothstep(0.40, 0.65, fDustRaw) * 0.90;
     compCol = compCol * (1.0 - dustAlpha) + dustCol * dustAlpha;
     compAlpha = compAlpha + dustAlpha * (1.0 - compAlpha);
 
     float finalAlpha = clamp(compAlpha * vignette * uOpacity, 0.0, 1.0);
     if (finalAlpha < 0.003) discard;
 
-    // Photographic HDR filmic compression (same principle as mainStar.ts) so highlights never clip into neon!
-    vec3 unpremult = compCol / max(compAlpha, 0.015);
-    vec3 filmic = 1.0 - exp(-unpremult * 1.16);
+    // High dynamic range filmic mapping:
+    // Preserves punchy obsidian blacks and vivid cosmic cyan/violet saturation with zero washed-out chalkiness
+    vec3 hdr = compCol;
+    vec3 filmic = hdr / (vec3(1.0) + hdr * 0.28);
+    // Deep S-curve contrast boost: eliminates pale pastels and gives rich, vivid celestial depth
+    filmic = pow(filmic, vec3(1.18));
 
     gl_FragColor = vec4(filmic, finalAlpha);
   }
@@ -199,18 +223,22 @@ export const foregroundVeilFragmentShader = /* glsl */ `
     float r = length(p);
     if (r >= 1.0) discard;
 
-    float evo = uTime * 0.55;
+    // Clear center so foreground veil NEVER clouds or obscures the typography
+    float textClear = smoothstep(0.20, 0.70, r);
+
+    float evo = uTime * 0.45;
     vec3 q = vec3(p.x * 2.4, p.y * 2.1, 0.0);
     float w = fbm3(q + vec3(0.0, evo * 0.22, evo * 0.14));
     float n = fbm5(q * 1.5 + 1.4 * vec3(w - 0.5, -w + 0.5, 0.0));
-    float vein = pow(clamp(1.0 - abs(2.0 * n - 1.0), 1e-4, 1.0), 4.5);
+    float vein = pow(clamp(1.0 - abs(2.0 * n - 1.0), 1e-4, 1.0), 5.5);
 
-    float mask = pow(max(1.0 - r, 1e-4), 2.2);
-    float wisp = smoothstep(0.46, 0.84, n * 0.72 + vein * 0.45) * mask;
-    float alpha = wisp * 0.32 * uOpacity;
+    float mask = pow(max(1.0 - r, 1e-4), 2.2) * textClear;
+    float wisp = smoothstep(0.48, 0.86, n * 0.68 + vein * 0.50) * mask;
+    float alpha = wisp * 0.22 * uOpacity;
     if (alpha < 0.003) discard;
 
-    vec3 col = mix(vec3(0.025, 0.02, 0.04), vec3(0.96, 0.68, 0.38), vein * 0.72);
+    // Vivid electric cyan celestial rim smoke
+    vec3 col = mix(vec3(0.01, 0.02, 0.04), vec3(0.20, 0.90, 1.25), vein);
     gl_FragColor = vec4(col, alpha);
   }
 `;

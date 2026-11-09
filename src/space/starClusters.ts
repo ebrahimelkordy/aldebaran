@@ -61,40 +61,56 @@ function createMonumentalForgeTitlePlane() {
   const drawText = () => {
     if (!ctx) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
 
-    // Subtle soft shadow for crisp separation over bright golden plasma veins
-    ctx.shadowColor = 'rgba(3, 4, 8, 0.55)';
-    ctx.shadowBlur = 32;
-    ctx.shadowOffsetY = 10;
+    // Zero drop shadow: pure vector-sharp modern architectural typography matching the rest of the site
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
 
-    ctx.fillStyle = '#FAF8F4';
-    ctx.font = '500 680px "Cormorant Garamond", "Cinzel", Georgia, serif';
-    ctx.fillText('THE', W * 0.5, 720);
+    const drawSpaced = (text: string, y: number, fontStr: string, tracking: number, fill: string) => {
+      ctx.font = fontStr;
+      ctx.fillStyle = fill;
+      const chars = text.split('');
+      let totalW = 0;
+      for (const ch of chars) {
+        totalW += ctx.measureText(ch).width + tracking;
+      }
+      totalW -= tracking;
+      let curX = (W - totalW) * 0.5;
+      for (const ch of chars) {
+        ctx.fillText(ch, curX, y);
+        curX += ctx.measureText(ch).width + tracking;
+      }
+    };
 
-    ctx.font = '500 760px "Cormorant Garamond", "Cinzel", Georgia, serif';
-    ctx.fillText('FORGE', W * 0.5, 1410);
+    // 'THE' — Monumental geometric sans matching ALDEBARAN hero typography
+    drawSpaced(
+      'THE',
+      720,
+      '800 520px "Inter", "Space Grotesk", "Antonio", sans-serif',
+      42,
+      '#FFFFFF',
+    );
+
+    // 'FORGE' — Bold architectural title matching the site's design system
+    drawSpaced(
+      'FORGE',
+      1380,
+      '800 620px "Inter", "Space Grotesk", "Antonio", sans-serif',
+      36,
+      '#FFFFFF',
+    );
 
     // Subtitle: CREATING COSMIC ARCHITECTURES
-    ctx.shadowBlur = 18;
-    ctx.font = '400 108px "Inter", "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#ECE8E1';
-    const sub = 'CREATING COSMIC ARCHITECTURES';
-    const chars = sub.split('');
-    const tracking = 13;
-    let totalW = 0;
-    for (const ch of chars) {
-      totalW += ctx.measureText(ch).width + tracking;
-    }
-    totalW -= tracking;
-
-    ctx.textAlign = 'left';
-    let curX = (W - totalW) * 0.5;
-    for (const ch of chars) {
-      ctx.fillText(ch, curX, 1625);
-      curX += ctx.measureText(ch).width + tracking;
-    }
+    drawSpaced(
+      'CREATING COSMIC ARCHITECTURES',
+      1625,
+      '600 108px "Inter", "Space Grotesk", sans-serif',
+      16,
+      '#E0F2FE',
+    );
 
     texture.needsUpdate = true;
   };
@@ -124,14 +140,14 @@ function createMonumentalForgeTitlePlane() {
       varying vec2 vUv;
       void main() {
         vec4 tex = texture2D(uMap, vUv);
-        if (tex.a < 0.008) discard;
-        vec3 ivory = vec3(0.91, 0.90, 0.88);
-        gl_FragColor = vec4(ivory * tex.rgb, tex.a * uOpacity);
+        if (tex.a < 0.005) discard;
+        // Pure, radiant crisp white architectural typography with vector-sharp alpha
+        gl_FragColor = vec4(tex.rgb, tex.a * uOpacity);
       }
     `,
     transparent: true,
     depthWrite: false,
-    depthTest: true,
+    depthTest: false,
   });
 
   const mesh = new Mesh(new PlaneGeometry(1, 1), material);
@@ -168,13 +184,13 @@ export function buildStarClusters() {
   nebulaMesh.renderOrder = 1;
   group.add(nebulaMesh);
 
-  // 2. Background & Summit 8-Ray Photographic Protostars (RenderOrder 2, matching ref_sector_02.jpeg)
+  // 2. Background & Summit 8-Ray Photographic Protostars (RenderOrder 2)
   const bgStarDefs: [number, number, number, [number, number, number], number][] = [
-    [52, 338, -110, [1.22, 1.16, 1.04], 122],   // Bright summit beacon star
-    [225, 315, -125, [1.08, 1.10, 1.18], 84],   // Upper-right summit companion
-    [138, 240, -105, [1.15, 1.12, 1.08], 92],   // Mid-summit diamond star above 'THE'
-    [292, 185, -115, [1.34, 0.92, 0.52], 106],  // Warm golden-amber star in right ionization arch
-    [-255, 285, -130, [1.05, 1.06, 1.12], 48],  // Subtle upper-left star near macro-telemetry
+    [52, 345, -110, [0.85, 1.15, 1.45], 110],   // Bright summit beacon star (cyan-diamond starlight)
+    [225, 320, -125, [0.95, 0.85, 1.35], 80],   // Upper-right summit companion (amethyst-starlight)
+    [175, 310, -105, [0.85, 1.15, 1.40], 65],   // Ridge companion star elevated cleanly above 'THE'
+    [292, 185, -115, [0.35, 1.10, 1.45], 95],   // Vibrant electric cyan star in right ionization arch
+    [-255, 285, -130, [0.85, 0.95, 1.25], 48],  // Subtle upper-left star near macro-telemetry
   ];
 
   const makeStarPoints = (
@@ -219,7 +235,7 @@ export function buildStarClusters() {
   const bgStars = makeStarPoints(bgStarDefs, 2);
   group.add(bgStars.pts);
 
-  // Subtle cosmic stardust motes
+  // Subtle cosmic stardust motes (vivid cyan and soft ultraviolet stardust)
   const random = createRandom(2049);
   const dustCount = LOW_END_DEVICE ? 480 : 900;
   const stardustSamples: StarSample[] = Array.from({ length: dustCount }, (): StarSample => {
@@ -232,7 +248,7 @@ export function buildStarClusters() {
         NEBULA_OFFSET.y + r * Math.sin(phi) * Math.sin(theta) * 0.95,
         NEBULA_OFFSET.z + r * Math.cos(phi) * 0.7,
       ],
-      color: random() < 0.55 ? [1.0, 0.86, 0.64] : [0.86, 0.88, 0.96],
+      color: random() < 0.65 ? [0.45, 0.92, 1.20] : [0.78, 0.65, 1.15],
       size: 0.65 + random() * 1.4,
       bright: 0.28 + random() * 0.55,
     };
@@ -241,7 +257,7 @@ export function buildStarClusters() {
   stardust.object.renderOrder = 2;
   group.add(stardust.object);
 
-  // 3. Monumental Centered 3D Serif 'THE / FORGE' + 'CREATING COSMIC ARCHITECTURES' (RenderOrder 3, z = -25)
+  // 3. Monumental Centered 3D Architectural Title 'THE / FORGE' + 'CREATING COSMIC ARCHITECTURES' (RenderOrder 3, z = -25)
   const theForgeTitle = createMonumentalForgeTitlePlane();
   group.add(theForgeTitle.mesh);
 
@@ -266,7 +282,7 @@ export function buildStarClusters() {
 
   const fgStars = makeStarPoints(
     [
-      [298, 22, 52, [1.14, 1.14, 1.18], 88], // Foreground star kissing right edge of 'FORGE' just like ref_sector_02.jpeg!
+      [298, 22, 52, [0.85, 1.15, 1.45], 80],
     ],
     4,
   );
@@ -368,10 +384,10 @@ export function buildStarClusters() {
       theForgeTitle.mesh.scale.set(curRight - curLeft, curTop - curBottom, 1);
       theForgeTitle.material.uniforms.uOpacity.value = opacity;
 
-      // Foreground nebula dust/gold wisp gently overlapping right edge of 'FORGE' in 3D depth
+      // Foreground nebula dust/gold wisp gently framing the lower-right quadrant in 3D depth
       veilMesh.position.set(
-        curRight - 65,
-        axisCenterY + yMidLocal * Math.cos(pitchRest) - 25,
+        curRight - 15,
+        axisCenterY + yMidLocal * Math.cos(pitchRest) - 45,
         45,
       );
       veilMesh.rotation.set(-pitchRest, 0, 0);
