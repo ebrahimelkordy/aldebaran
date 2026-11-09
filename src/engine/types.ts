@@ -56,3 +56,4 @@ export interface SectorAnchorPayloads {
   orbital?: MoonScreenAnchor | null;
   astrolabe?: AstrolabeScreenAnchors | null;
 }
+

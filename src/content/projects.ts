@@ -194,3 +194,4 @@ export const MOON_ORBITS: Record<number, DistinctMoonOrbit> = {
     palette: { dark: [0.42, 0.42, 0.44], mid: [0.72, 0.72, 0.75], light: [0.9, 0.9, 0.92] },
   },
 };
+

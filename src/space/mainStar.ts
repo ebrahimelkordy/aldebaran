@@ -336,8 +336,9 @@ export function buildMainStar() {
 
         projected.copy(worldOrigin).project(camera);
         const aspect = camera.aspect || 1;
+        const portraitLerp = Math.max(0, Math.min(1, (0.95 - aspect) / 0.35));
         cx = 0.5 * projected.x * aspect;
-        cy = 0.5 * projected.y;
+        cy = 0.5 * projected.y + 0.09 * portraitLerp;
       }
 
       visible = true;
@@ -359,7 +360,10 @@ export function buildMainStar() {
       const h = Math.max(1, drawSize.y);
       resUniform.set(w, h);
       const aspect = w / h;
-      uniforms.sc.value = Math.min(1.0, aspect < 1 ? aspect * 1.15 : 1.0);
+      const portraitLerp = Math.max(0, Math.min(1, (0.95 - aspect) / 0.35));
+      const desktopSc = Math.min(1.0, aspect < 1 ? aspect * 1.15 : 1.0);
+      const portraitSc = Math.min(0.88, aspect * 1.48);
+      uniforms.sc.value = desktopSc * (1 - portraitLerp) + portraitSc * portraitLerp;
 
       const prevAutoClear = renderer.autoClear;
       renderer.autoClear = false;

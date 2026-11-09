@@ -36,3 +36,4 @@ export function BrandMotionPod({ onHover }: BrandMotionPodProps) {
     </div>
   );
 }
+

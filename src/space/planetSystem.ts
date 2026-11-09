@@ -33,6 +33,7 @@ import { createStarPoints, type StarSample } from '@/space/starPoints';
 const SYSTEM_CENTER = new Vector3(...SECTORS[1].position);
 // Offset flagship ringed planet to left-center (x ~ 22.5%, y ~ 48.5%) matching ref_sector_01.jpeg
 const PLANET_OFFSET = new Vector3(-395, 10, 0);
+const PORTRAIT_PLANET_OFFSET = new Vector3(-18, 175, 120);
 const PLANET_WORLD_CENTER = SYSTEM_CENTER.clone().add(PLANET_OFFSET);
 
 const LIGHT_DIRECTION = new Vector3(0.84, -0.34, 0.42).normalize();
@@ -423,6 +424,9 @@ export function buildPlanetSystem(): PlanetSystem {
       if (!group.visible) return;
 
       const aspect = camera?.aspect ?? 16 / 9;
+      const portraitLerp = Math.max(0, Math.min(1, (0.95 - aspect) / 0.35));
+      planetCenterAnchor.position.lerpVectors(PLANET_OFFSET, PORTRAIT_PLANET_OFFSET, portraitLerp);
+
       const baseCamZ = SECTORS[1].camera[2] * framing;
       const distToPlane = baseCamZ - PLANE_Z;
       const frustumH = 2 * distToPlane * Math.tan((REST_FOV * Math.PI) / 360);
@@ -433,8 +437,18 @@ export function buildPlanetSystem(): PlanetSystem {
       const yTop = (0.5 - 0.124) * frustumH;
       const yBottom = (0.5 - 0.382) * frustumH;
 
-      selectedWork.mesh.position.set((xLeft + xRight) * 0.5, (yTop + yBottom) * 0.5, PLANE_Z);
-      selectedWork.mesh.scale.set(xRight - xLeft, yTop - yBottom, 1);
+      const pLeft = (-0.5 + 0.08) * frustumW;
+      const pRight = (-0.5 + 0.92) * frustumW;
+      const pTop = (0.5 - 0.08) * frustumH;
+      const pBottom = (0.5 - 0.20) * frustumH;
+
+      const curLeft = xLeft * (1 - portraitLerp) + pLeft * portraitLerp;
+      const curRight = xRight * (1 - portraitLerp) + pRight * portraitLerp;
+      const curTop = yTop * (1 - portraitLerp) + pTop * portraitLerp;
+      const curBottom = yBottom * (1 - portraitLerp) + pBottom * portraitLerp;
+
+      selectedWork.mesh.position.set((curLeft + curRight) * 0.5, (curTop + curBottom) * 0.5, PLANE_Z);
+      selectedWork.mesh.scale.set(curRight - curLeft, curTop - curBottom, 1);
       selectedWork.material.uniforms.uOpacity.value = focused !== null ? opacity * 0.22 : opacity;
 
       const beaconAngle = 0.18 + Math.sin(time * 0.35) * 0.08;

@@ -22,6 +22,7 @@ const LENS_PLANE_SIZE = 5200;
 // Position Black Hole shadow slightly upper-right of center (x ~ 58%, y ~ 41.5%)
 // so 'T U M' of QUANTUM pass behind the upper accretion disk & event horizon while 'UPLINK' sits in front
 const BH_OFFSET = new Vector3(175, 95, 0);
+const PORTRAIT_BH_OFFSET = new Vector3(18, 165, 90);
 
 function createSplitHeadlinePlanes() {
   const W = 4096;
@@ -177,6 +178,7 @@ export function buildBlackHole() {
     planeZ: number,
     baseCamZ: number,
     aspect: number,
+    portraitLerp = 0,
   ) => {
     const dist = baseCamZ - planeZ;
     const fH = 2 * dist * Math.tan((REST_FOV * Math.PI) / 360);
@@ -186,8 +188,19 @@ export function buildBlackHole() {
     const xR = (-0.5 + 0.978) * fW;
     const yT = (0.5 - 0.140) * fH;
     const yB = (0.5 - 0.452) * fH;
-    mesh.position.set((xL + xR) * 0.5, (yT + yB) * 0.5, planeZ);
-    mesh.scale.set(xR - xL, yT - yB, 1);
+
+    const pL = (-0.5 + 0.04) * fW;
+    const pR = (-0.5 + 0.96) * fW;
+    const pT = (0.5 - 0.15) * fH;
+    const pB = (0.5 - 0.27) * fH;
+
+    const curL = xL * (1 - portraitLerp) + pL * portraitLerp;
+    const curR = xR * (1 - portraitLerp) + pR * portraitLerp;
+    const curT = yT * (1 - portraitLerp) + pT * portraitLerp;
+    const curB = yB * (1 - portraitLerp) + pB * portraitLerp;
+
+    mesh.position.set((curL + curR) * 0.5, (curT + curB) * 0.5, planeZ);
+    mesh.scale.set(curR - curL, curT - curB, 1);
   };
 
   return {
@@ -199,12 +212,20 @@ export function buildBlackHole() {
       group.visible = opacity > 0.005;
       if (!group.visible) return;
 
+      const aspect = camera.aspect || 16 / 9;
+      const portraitLerp = Math.max(0, Math.min(1, (0.95 - aspect) / 0.35));
+      lensPlane.position.lerpVectors(BH_OFFSET, PORTRAIT_BH_OFFSET, portraitLerp);
+      uniforms.uCenter.value.set(
+        SECTORS[3].position[0] + lensPlane.position.x,
+        SECTORS[3].position[1] + lensPlane.position.y,
+        SECTORS[3].position[2] + lensPlane.position.z,
+      );
+
       lensPlane.quaternion.copy(camera.quaternion);
 
-      const aspect = camera.aspect || 16 / 9;
       const baseCamZ = SECTORS[3].camera[2] * framing;
-      fitScreenBox(qMesh, BACK_Z, baseCamZ, aspect);
-      fitScreenBox(uMesh, FRONT_Z, baseCamZ, aspect);
+      fitScreenBox(qMesh, BACK_Z, baseCamZ, aspect, portraitLerp);
+      fitScreenBox(uMesh, FRONT_Z, baseCamZ, aspect, portraitLerp);
       qMat.uniforms.uOpacity.value = opacity;
       uMat.uniforms.uOpacity.value = opacity;
     },

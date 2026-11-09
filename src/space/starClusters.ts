@@ -42,6 +42,7 @@ const SECTOR_POS = new Vector3(...SECTORS[2].position);
 const NEBULA_OFFSET = new Vector3(95, 10, -160);
 // Sleek Oblique 3D Metallic Armillary Astrolabe in lower-left quadrant (x ~ 26.2%, y ~ 63.8%)
 const ASTROLABE_OFFSET = new Vector3(-378, -118, 115);
+const PORTRAIT_ASTROLABE_OFFSET = new Vector3(0, -92, 165);
 
 function createMonumentalForgeTitlePlane() {
   const W = 4096;
@@ -329,6 +330,8 @@ export function buildStarClusters() {
 
       // Fit Monumental 3D 'THE / FORGE' + 'CREATING COSMIC ARCHITECTURES' in center (x: 31%..70.5%, y: 34.5%..65.5%)
       const aspect = camera?.aspect ?? 16 / 9;
+      const portraitLerp = Math.max(0, Math.min(1, (0.95 - aspect) / 0.35));
+
       const baseCamY = SECTORS[2].camera[1] * framing;
       const baseCamZ = SECTORS[2].camera[2] * framing;
       const camDist = Math.hypot(baseCamY, baseCamZ);
@@ -342,22 +345,32 @@ export function buildStarClusters() {
       const yTop = (0.5 - 0.342) * frustumH;
       const yBottom = (0.5 - 0.662) * frustumH;
 
+      const pLeft = (-0.5 + 0.08) * frustumW;
+      const pRight = (-0.5 + 0.92) * frustumW;
+      const pTop = (0.5 - 0.22) * frustumH;
+      const pBottom = (0.5 - 0.43) * frustumH;
+
+      const curLeft = xLeft * (1 - portraitLerp) + pLeft * portraitLerp;
+      const curRight = xRight * (1 - portraitLerp) + pRight * portraitLerp;
+      const curTop = yTop * (1 - portraitLerp) + pTop * portraitLerp;
+      const curBottom = yBottom * (1 - portraitLerp) + pBottom * portraitLerp;
+
       const pitchRest = Math.atan2(baseCamY, baseCamZ);
       const axisCenterY = baseCamY * (planeZ / Math.max(baseCamZ, 1));
-      const yMidLocal = (yTop + yBottom) * 0.5;
+      const yMidLocal = (curTop + curBottom) * 0.5;
 
       theForgeTitle.mesh.position.set(
-        (xLeft + xRight) * 0.5,
+        (curLeft + curRight) * 0.5,
         axisCenterY + yMidLocal * Math.cos(pitchRest),
         planeZ - yMidLocal * Math.sin(pitchRest),
       );
       theForgeTitle.mesh.rotation.set(-pitchRest, 0, 0);
-      theForgeTitle.mesh.scale.set(xRight - xLeft, yTop - yBottom, 1);
+      theForgeTitle.mesh.scale.set(curRight - curLeft, curTop - curBottom, 1);
       theForgeTitle.material.uniforms.uOpacity.value = opacity;
 
       // Foreground nebula dust/gold wisp gently overlapping right edge of 'FORGE' in 3D depth
       veilMesh.position.set(
-        xRight - 65,
+        curRight - 65,
         axisCenterY + yMidLocal * Math.cos(pitchRest) - 25,
         45,
       );
@@ -365,7 +378,13 @@ export function buildStarClusters() {
       veilMat.uniforms.uTime.value = time;
       veilMat.uniforms.uOpacity.value = opacity;
 
-      astrolabe.group.position.x = ASTROLABE_OFFSET.x * Math.min(1.06, Math.max(0.76, aspect / (16 / 9)));
+      const desktopAstrolabeX = ASTROLABE_OFFSET.x * Math.min(1.06, Math.max(0.76, aspect / (16 / 9)));
+      astrolabe.group.position.set(
+        desktopAstrolabeX * (1 - portraitLerp) + PORTRAIT_ASTROLABE_OFFSET.x * portraitLerp,
+        ASTROLABE_OFFSET.y * (1 - portraitLerp) + PORTRAIT_ASTROLABE_OFFSET.y * portraitLerp,
+        ASTROLABE_OFFSET.z * (1 - portraitLerp) + PORTRAIT_ASTROLABE_OFFSET.z * portraitLerp,
+      );
+      astrolabe.group.scale.setScalar(1.0 * (1 - portraitLerp) + 0.76 * portraitLerp);
       astrolabe.update(time, opacity, activeDiscipline);
     },
     refreshTextures() {

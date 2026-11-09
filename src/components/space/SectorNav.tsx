@@ -23,7 +23,7 @@ export default function SectorNav({ activeIndex, warping, onNavigate }: SectorNa
   const nextIndex = (activeIndex + 1) % SECTORS.length;
 
   return (
-    <div className="pointer-events-auto absolute bottom-2.5 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5">
+    <div className="pointer-events-auto absolute bottom-[max(0.65rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5">
       <div className="flex items-center gap-3 rounded-full border border-white/20 bg-[#070910]/65 px-2.5 py-1.5 backdrop-blur-xl shadow-2xl">
         {/* Left Radar / Crosshair Previous Button (Matches ref_sector_02.jpeg) */}
         <button
@@ -80,7 +80,7 @@ export default function SectorNav({ activeIndex, warping, onNavigate }: SectorNa
       </div>
 
       {/* Live Pointer Coordinates Readout beneath Pill */}
-      <div className="font-mono text-[9.5px] tracking-[0.1em] text-[#ECE8E1]/90">
+      <div className="hidden lg:block font-mono text-[9.5px] tracking-[0.1em] text-[#ECE8E1]/90">
         [{coords[0]}, {coords[1]}]
       </div>
     </div>

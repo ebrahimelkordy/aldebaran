@@ -91,3 +91,4 @@ export function SensoryIdentityPod({ onHover }: SensoryIdentityPodProps) {
     </div>
   );
 }
+

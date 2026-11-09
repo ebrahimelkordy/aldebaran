@@ -11,8 +11,10 @@ import CosmicBootLoader from '@/components/space/CosmicBootLoader';
 import { SECTORS } from '@/space/constants';
 import { Universe } from '@/space/universe';
 import { readSectorFromHash, spatialStore, useSpatialStore } from '@/store/spatialStore';
+import { useViewportMode } from '@/hooks/useViewportMode';
 
 export default function Experience() {
+  const { isMobile } = useViewportMode();
   const containerRef = useRef<HTMLDivElement>(null);
   const universeRef = useRef<Universe | null>(null);
   const sector = useSpatialStore((s) => s.sector);
@@ -274,7 +276,7 @@ export default function Experience() {
           </div>
         )}
 
-        {activeSector === 2 && (
+        {(activeSector === 2 || isMobile) && (
           <SectorNav activeIndex={activeSector} warping={warping} onNavigate={handleNavigate} />
         )}
       </div>

@@ -24,3 +24,4 @@ export const SECTOR_CENTERS: readonly Vec3[] = [
   [-2200, -100, -5500],
   [2400, 300, -8200],
 ];
+

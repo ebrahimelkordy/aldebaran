@@ -1,7 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Check, Send } from 'lucide-react';
+import { Check, Send, ChevronDown, X } from 'lucide-react';
 import { sendTransmission } from '@/lib/transmitClient';
 import { type TransmissionScope } from '@/types/transmission';
+import { useViewportMode } from '@/hooks/useViewportMode';
 
 interface TransmissionPanelProps {
   onBroadcast: () => void;
@@ -38,6 +39,8 @@ function validate(form: TransmissionForm): string | null {
 }
 
 export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProps) {
+  const { isMobile } = useViewportMode();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [form, setForm] = useState<TransmissionForm>(EMPTY_FORM);
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [status, setStatus] = useState<SubmitStatus>({ kind: 'idle' });
@@ -87,7 +90,7 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
       className="pointer-events-none absolute inset-0 overflow-hidden select-none z-20"
       aria-label="Sector 03 Quantum Uplink"
     >
-      {/* 1. TOP-RIGHT ANIMATED RADAR TELEMETRY WIDGET (UPLINK-02) */}
+      {/* 1. TOP-RIGHT ANIMATED RADAR TELEMETRY WIDGET (UPLINK-02) - DESKTOP ONLY */}
       <div
         className="pointer-events-none absolute top-[4.8%] right-[11.2%] hidden lg:flex items-center gap-3 z-20"
         aria-hidden="true"
@@ -135,8 +138,20 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
         </div>
       </div>
 
-      {/* 2. LEFT EDITORIAL COPY BLOCK: Establish Transmission */}
-      <div className="pointer-events-none absolute top-[43.2%] left-[6%] sm:left-[10.6%] max-w-[420px] z-20">
+      {/* MOBILE COMPACT TOP TELEMETRY PILL (< 1024px) */}
+      <div className="pointer-events-none absolute top-16 inset-x-4 lg:hidden z-20 flex justify-center">
+        <div className="rounded-full border border-white/15 bg-[#060810]/75 backdrop-blur-md px-3.5 py-1.5 font-mono text-[9px] tracking-[0.14em] text-[#D8D4CC] flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C5F1FA] animate-pulse-soft" />
+          <span>SEC-03: ENCRYPTED</span>
+          <span className="text-white/30">&bull;</span>
+          <span>DIRECT UPLINK</span>
+          <span className="text-white/30">&bull;</span>
+          <span>TLS-256</span>
+        </div>
+      </div>
+
+      {/* 2. LEFT EDITORIAL COPY BLOCK: Establish Transmission - DESKTOP ONLY */}
+      <div className="pointer-events-none absolute top-[43.2%] left-[6%] sm:left-[10.6%] max-w-[420px] z-20 hidden lg:block">
         <h2
           className="font-serif font-normal text-[#F7F5F0] leading-[1.06] tracking-[-0.01em]"
           style={{ fontSize: 'clamp(1.85rem, 3.25vw, 3.05rem)' }}
@@ -149,23 +164,20 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
         </p>
       </div>
 
-      {/* 3. BOTTOM-LEFT ANIMATED CONCENTRIC RADAR (45° DIAGONAL 'X' AXES — NO '+' CROSS) */}
+      {/* 3. BOTTOM-LEFT ANIMATED CONCENTRIC RADAR (DESKTOP ONLY) */}
       <div
         className="pointer-events-none absolute bottom-[4.8%] left-[3.8%] hidden lg:flex items-center z-20"
         aria-hidden="true"
       >
         <svg viewBox="0 0 340 210" className="w-[335px] h-[206px] overflow-visible">
           <g transform="translate(102, 105)">
-            {/* 45-degree Diagonal 'X' Reference Axes (gapped around center ring — never a '+') */}
             <line x1="-78" y1="-78" x2="-12" y2="-12" stroke="rgba(236,232,225,0.14)" strokeWidth="0.75" />
             <line x1="12" y1="12" x2="78" y2="78" stroke="rgba(236,232,225,0.14)" strokeWidth="0.75" />
             <line x1="-78" y1="78" x2="-12" y2="12" stroke="rgba(236,232,225,0.14)" strokeWidth="0.75" />
             <line x1="12" y1="-12" x2="78" y2="-78" stroke="rgba(236,232,225,0.14)" strokeWidth="0.75" />
 
-            {/* Outer stationary frame */}
             <circle r="92" fill="rgba(5,8,14,0.44)" stroke="rgba(236,232,225,0.2)" strokeWidth="0.9" />
 
-            {/* Rotating Outer Radial Tick Ring */}
             <g style={{ transformOrigin: '0px 0px' }} className="animate-orbit-cw">
               <circle
                 r="80"
@@ -176,7 +188,6 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               />
             </g>
 
-            {/* Counter-Rotating Middle Scanner Arc */}
             <circle r="63" fill="none" stroke="rgba(236,232,225,0.2)" strokeWidth="0.9" />
             <g style={{ transformOrigin: '0px 0px' }} className="animate-orbit-ccw">
               <path
@@ -195,7 +206,6 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               />
             </g>
 
-            {/* Inner Rotating Tick Track & Fast Sweep Crescent */}
             <circle
               r="46"
               fill="none"
@@ -215,13 +225,11 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               <circle cx="31" cy="-6" r="2.2" fill="#DCEEF2" />
             </g>
 
-            {/* Center Diagonal 'X' Emblem + Orbital Core Ring */}
             <circle r="8.5" fill="none" stroke="rgba(236,232,225,0.35)" strokeWidth="0.8" />
             <line x1="-5.5" y1="-5.5" x2="5.5" y2="5.5" stroke="#FFFFFF" strokeWidth="1.15" strokeLinecap="round" />
             <line x1="-5.5" y1="5.5" x2="5.5" y2="-5.5" stroke="#FFFFFF" strokeWidth="1.15" strokeLinecap="round" />
             <circle r="2.2" fill="#DCEEF2" />
 
-            {/* Callout Leader 1 -> UPLINK-01 */}
             <polyline
               points="46,-16 76,-44 114,-44"
               fill="none"
@@ -230,7 +238,6 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
             />
             <circle cx="116" cy="-44" r="2.2" fill="#FFFFFF" />
 
-            {/* Callout Leader 2 -> UPLINK-02 */}
             <line x1="34" y1="8" x2="122" y2="8" stroke="rgba(236,232,225,0.55)" strokeWidth="0.9" />
             <circle cx="124" cy="8" r="2.2" fill="#FFFFFF" />
           </g>
@@ -272,16 +279,80 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
         </svg>
       </div>
 
-      {/* 4. LUXURY POLISHED BOTTOM-RIGHT TRANSMISSION CONSOLE */}
+      {/* MOBILE COLLAPSED DRAWER BAR (< 1024px) */}
+      <div className="pointer-events-auto lg:hidden absolute bottom-[68px] inset-x-4 z-30">
+        {!isExpanded && (
+          <div className="w-full rounded-2xl border border-white/20 p-3.5 backdrop-blur-2xl bg-gradient-to-r from-[#241911]/90 via-[#090D15]/95 to-[#060A11]/95 shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex items-center justify-between gap-3">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5 font-mono text-[8.5px] tracking-[0.18em] text-amber-200/90 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C5F1FA] animate-pulse-soft" />
+                <span>03 // DIRECT QUANTUM CHANNEL</span>
+              </div>
+              <div className="font-serif text-[16px] text-[#F7F5F0] truncate mt-0.5">
+                Establish Transmission
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="chamfer-hex inline-flex items-center gap-1.5 bg-gradient-to-r from-[#E2F5F8] via-[#F4FCFD] to-[#CFEFF6] text-[#061015] font-mono font-semibold text-[9.5px] tracking-[0.16em] uppercase px-4 py-2.5 shadow-[0_0_18px_rgba(205,244,252,0.4)] active:scale-95 transition-transform cursor-pointer shrink-0"
+            >
+              <span>TRANSMIT</span>
+              <Send className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* MOBILE BACKDROP OVERLAY WHEN EXPANDED */}
+      {isMobile && isExpanded && (
+        <div
+          onClick={() => setIsExpanded(false)}
+          className="pointer-events-auto fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* LUXURY TRANSMISSION CONSOLE (DESKTOP OR MOBILE EXPANDED) */}
       <form
         onSubmit={handleSubmit}
         noValidate
-        className="pointer-events-auto absolute bottom-5 right-4 sm:right-[3.2%] sm:bottom-[4.2%] flex flex-col sm:flex-row items-stretch sm:items-end gap-3 z-30 max-w-[94vw]"
-        style={{
-          transform: 'perspective(1200px) rotateY(-5deg) rotateX(1deg)',
-          transformOrigin: 'bottom right',
-        }}
+        className={`pointer-events-auto ${
+          isMobile
+            ? isExpanded
+              ? 'fixed inset-x-0 bottom-0 z-50 p-4 pb-8 max-h-[85dvh] overflow-y-auto rounded-t-3xl border-t border-white/25 bg-[#070B12]/95 backdrop-blur-2xl shadow-[0_-20px_60px_rgba(0,0,0,0.9)] flex flex-col gap-3'
+              : 'hidden'
+            : 'absolute bottom-5 right-4 sm:right-[3.2%] sm:bottom-[4.2%] flex flex-col sm:flex-row items-stretch sm:items-end gap-3 z-30 max-w-[94vw]'
+        }`}
+        style={
+          isMobile
+            ? undefined
+            : {
+                transform: 'perspective(1200px) rotateY(-5deg) rotateX(1deg)',
+                transformOrigin: 'bottom right',
+              }
+        }
       >
+        {/* Mobile Header with Collapse button */}
+        {isMobile && isExpanded && (
+          <div className="flex items-center justify-between pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C5F1FA] animate-pulse-soft shadow-[0_0_8px_rgba(197,241,250,0.8)]" />
+              <span className="font-mono text-[9.5px] tracking-[0.18em] text-amber-200/90 uppercase">
+                TRANSMISSION CONSOLE
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/80 hover:text-white hover:border-white/40 cursor-pointer active:scale-95"
+              aria-label="Collapse transmission drawer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Honeypot field for bot spam prevention */}
         <input
           type="text"
@@ -293,6 +364,7 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
           aria-hidden="true"
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0, margin: 0 }}
         />
+
         {/* LEFT POD: Architectural Glass SCOPE Selector */}
         <fieldset className="w-full sm:w-[126px] shrink-0 sm:mb-1">
           <div
@@ -302,9 +374,8 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
                 'linear-gradient(165deg, rgba(38,24,14,0.76) 0%, rgba(11,13,20,0.9) 100%)',
             }}
           >
-            {/* Precision top-left & bottom-right corner accents */}
             <span className="pointer-events-none absolute top-0 left-3 right-3 h-[1px] bg-gradient-to-r from-transparent via-amber-200/45 to-transparent" />
-            <div className="flex items-center justify-between mb-2.5 px-0.5">
+            <div className="flex items-center justify-between mb-2 px-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D8F3F8] shadow-[0_0_8px_rgba(216,243,248,0.8)]" />
               <span className="font-mono text-[9px] tracking-[0.2em] text-[#ECE8E1]/90 uppercase">
                 SCOPE
@@ -380,7 +451,7 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               maxLength={80}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="Your name"
-              className="w-full bg-transparent font-sans text-[13px] text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
+              className="w-full bg-transparent font-sans text-[16px] lg:text-[13px] text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
             />
           </label>
 
@@ -398,7 +469,7 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               maxLength={120}
               onChange={(e) => updateField('email', e.target.value)}
               placeholder="you@company.com"
-              className="w-full bg-transparent font-sans text-[13px] text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
+              className="w-full bg-transparent font-sans text-[16px] lg:text-[13px] text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
             />
           </label>
 
@@ -416,7 +487,7 @@ export default function TransmissionPanel({ onBroadcast }: TransmissionPanelProp
               rows={3}
               onChange={(e) => updateField('message', e.target.value)}
               placeholder="Briefly describe what you need."
-              className="w-full resize-none bg-transparent font-sans text-[13px] leading-relaxed text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
+              className="w-full resize-none bg-transparent font-sans text-[16px] lg:text-[13px] leading-relaxed text-[#F7F5F0] placeholder:text-[#9E9B93]/70 outline-none"
             />
           </label>
 

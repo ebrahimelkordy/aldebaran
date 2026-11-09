@@ -158,8 +158,8 @@ export default function SystemsPanel({ getAnchors, onDisciplineChange }: Systems
       {/* 1. UPPER-LEFT INSTRUMENT POD: MACRO-TELEMETRY */}
       <MacroTelemetryPod onHover={(active) => onDisciplineChange?.(active ? 0 : null)} />
 
-      {/* 2. TOP-LEFT EDITORIAL STATEMENT */}
-      <div className="pointer-events-none absolute top-[23.2%] left-[3.6%] max-w-[92vw] lg:max-w-[560px] z-20">
+      {/* 2. TOP-LEFT EDITORIAL STATEMENT (Desktop) */}
+      <div className="pointer-events-none absolute top-[23.2%] left-[3.6%] max-w-[92vw] lg:max-w-[560px] hidden lg:block z-20">
         <p className="font-mono text-[10.5px] sm:text-[11px] tracking-[0.22em] text-[#E6E2DA] uppercase">
           02 // THE FORGE
         </p>
@@ -177,6 +177,16 @@ export default function SystemsPanel({ getAnchors, onDisciplineChange }: Systems
           <span className="text-white/30">&bull;</span>
           <span>REPLICATION: GLOBAL</span>
         </div>
+      </div>
+
+      {/* MOBILE COMPACT HEADER (< 1024px) */}
+      <div className="pointer-events-none absolute top-16 inset-x-5 lg:hidden z-20">
+        <div className="font-mono text-[9px] tracking-[0.2em] text-amber-200/90 uppercase">
+          02 // THE FORGE
+        </div>
+        <p className="font-sans font-light text-[11px] text-[#D4D0C8] mt-0.5 max-w-[280px]">
+          Engineering at astronomical scale. Custom graphics &amp; realtime systems.
+        </p>
       </div>
 
       {/* 3. LOWER-RIGHT-CENTER OPEN FRAMELESS EDITORIAL SERIF: Cinematic Interfaces */}
@@ -209,19 +219,77 @@ export default function SystemsPanel({ getAnchors, onDisciplineChange }: Systems
       {/* 7. BOTTOM-RIGHT EXECUTIVE ARCHITECTURE POD: Sensory Identity */}
       <SensoryIdentityPod onHover={(active) => onDisciplineChange?.(active ? 1 : null)} />
 
-      {/* MOBILE / TABLET LUXURY SUMMARY */}
-      <div className="pointer-events-auto lg:hidden absolute inset-x-4 bottom-20 grid grid-cols-1 sm:grid-cols-3 gap-2.5 z-20">
-        <div className="forge-card p-3">
-          <span className="font-mono text-[8px] tracking-[0.16em] text-amber-200/85">01 // GLSL &amp; 3D</span>
-          <h4 className="font-serif text-[17px] text-[#FAF8F4] mt-0.5">High-Compute Engines</h4>
-        </div>
-        <div className="forge-card p-3">
-          <span className="font-mono text-[8px] tracking-[0.16em] text-amber-200/85">02 // SPATIAL UI</span>
-          <h4 className="font-serif text-[17px] text-[#FAF8F4] mt-0.5">Cinematic Interfaces</h4>
-        </div>
-        <div className="forge-card p-3">
-          <span className="font-mono text-[8px] tracking-[0.16em] text-amber-200/85">03 // FULL-STACK</span>
-          <h4 className="font-serif text-[17px] text-[#FAF8F4] mt-0.5">Sensory Identity</h4>
+      {/* MOBILE LUXURY SNAP CAROUSEL (< 1024px) */}
+      <div className="pointer-events-auto lg:hidden absolute inset-x-0 bottom-[68px] z-20">
+        <div className="flex gap-3 px-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2">
+          {/* Card 0: High-Compute Engines */}
+          <div
+            onClick={() => onDisciplineChange?.(0)}
+            className="w-[84vw] max-w-[340px] shrink-0 snap-center forge-card p-3.5 cursor-pointer"
+            style={{ '--glow-x': '50%', '--glow-y': '100%', '--rim-angle': '145deg' } as React.CSSProperties}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-mono text-[8px] tracking-[0.2em] text-amber-200/90 uppercase">
+                01 // CORE ARCHITECTURE
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse-soft" />
+            </div>
+            <h3 className="font-serif text-[18px] text-[#FAF8F4] leading-tight">High-Compute Engines</h3>
+            <p className="font-sans font-light text-[10.5px] leading-tight text-[#D4D0C8] mt-0.5 line-clamp-1">
+              Realtime WebGL pipelines &amp; distributed low-latency runtimes.
+            </p>
+            <div className="forge-well mt-2 px-2.5 py-1.5 flex items-center justify-between font-mono text-[7.5px] text-[#D8D4CC]">
+              <div><span className="text-white/45">LATENCY:</span> <span className="text-amber-200">&lt;14ms</span></div>
+              <div><span className="text-white/45">FPS:</span> <span className="text-amber-200">60.0 LOCK</span></div>
+              <span className="text-amber-200/90 font-semibold">ACTIVE &rarr;</span>
+            </div>
+          </div>
+
+          {/* Card 1: Cinematic Interfaces */}
+          <div
+            onClick={() => onDisciplineChange?.(1)}
+            className="w-[84vw] max-w-[340px] shrink-0 snap-center forge-card p-3.5 cursor-pointer"
+            style={{ '--glow-x': '50%', '--glow-y': '100%', '--rim-angle': '145deg' } as React.CSSProperties}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-mono text-[8px] tracking-[0.2em] text-amber-200/90 uppercase">
+                02 // SPATIAL &amp; DIGITAL UI
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EAC078]" />
+            </div>
+            <h3 className="font-serif text-[18px] text-[#FAF8F4] leading-tight">Cinematic Interfaces</h3>
+            <p className="font-sans font-light text-[10.5px] leading-tight text-[#D4D0C8] mt-0.5 line-clamp-1">
+              Fluid HUD grids, sensory haptics &amp; 3D DOM projection.
+            </p>
+            <div className="forge-well mt-2 px-2.5 py-1.5 flex items-center justify-between font-mono text-[7.5px] text-[#D8D4CC]">
+              <div><span className="text-white/45">PROJECTION:</span> <span className="text-amber-200">60FPS BUS</span></div>
+              <div><span className="text-white/45">HUD:</span> <span className="text-amber-200">RETINA</span></div>
+              <span className="text-amber-200/90 font-semibold">ACTIVE &rarr;</span>
+            </div>
+          </div>
+
+          {/* Card 2: Sensory Identity */}
+          <div
+            onClick={() => onDisciplineChange?.(2)}
+            className="w-[84vw] max-w-[340px] shrink-0 snap-center forge-card p-3.5 cursor-pointer"
+            style={{ '--glow-x': '50%', '--glow-y': '100%', '--rim-angle': '145deg' } as React.CSSProperties}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-mono text-[8px] tracking-[0.2em] text-amber-200/90 uppercase">
+                03 // SENSORY IDENTITY
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+            </div>
+            <h3 className="font-serif text-[18px] text-[#FAF8F4] leading-tight">Sensory Identity</h3>
+            <p className="font-sans font-light text-[10.5px] leading-tight text-[#D4D0C8] mt-0.5 line-clamp-1">
+              Procedural typography, raymarched optics &amp; sonic branding.
+            </p>
+            <div className="forge-well mt-2 px-2.5 py-1.5 flex items-center justify-between font-mono text-[7.5px] text-[#D8D4CC]">
+              <div><span className="text-white/45">OPTICS:</span> <span className="text-amber-200">RAYMARCH</span></div>
+              <div><span className="text-white/45">SHADERS:</span> <span className="text-amber-200">CUSTOM</span></div>
+              <span className="text-amber-200/90 font-semibold">ACTIVE &rarr;</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

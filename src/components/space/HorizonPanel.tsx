@@ -83,14 +83,110 @@ export default function HorizonPanel({ onEngage }: HorizonPanelProps) {
         </div>
       </div>
 
-      {/* Mobile fallback title */}
-      <div className="pointer-events-none absolute top-20 left-5 sm:hidden z-10">
-        <h1 className="font-geometric font-bold text-5xl tracking-[-0.02em] text-[#ECE8E0] uppercase leading-none">
-          ALDEBARAN
-        </h1>
-        <p className="font-geometric text-xs tracking-[0.36em] text-[#E2DED6] uppercase mt-1.5">
-          SPATIAL STUDIO
-        </p>
+      {/* Mobile Upper Telemetry Bar */}
+      <div className="pointer-events-none absolute top-16 inset-x-4 sm:hidden z-20 flex justify-center">
+        <div className="rounded-full border border-white/15 bg-[#060810]/75 backdrop-blur-md px-3.5 py-1.5 font-mono text-[9px] tracking-[0.14em] text-[#D8D4CC] flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse-soft" />
+          <span>SYS: ACTIVE</span>
+          <span className="text-white/30">&bull;</span>
+          <span>
+            VEL:{' '}
+            <LiveReadout
+              initial="14.5"
+              intervalMs={500}
+              getValue={(t) => (14.5 + Math.sin(t * 1.6) * 0.1).toFixed(1)}
+            />{' '}
+            KM/S
+          </span>
+          <span className="text-white/30">&bull;</span>
+          <span>42°58&apos;N</span>
+        </div>
+      </div>
+
+      {/* Mobile Celestial Astrolabe Ring Centered Around Elevated Sun at top-[38%] */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[76vw] h-[76vw] max-w-[320px] opacity-60 sm:hidden z-10"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 400 400" className="w-full h-full overflow-visible">
+          <circle
+            cx="200"
+            cy="200"
+            r="172"
+            fill="none"
+            stroke="rgba(236,232,225,0.18)"
+            strokeWidth="0.8"
+            strokeDasharray="2 4"
+          />
+          <circle
+            cx="200"
+            cy="200"
+            r="148"
+            fill="none"
+            stroke="rgba(236,232,225,0.12)"
+            strokeWidth="0.6"
+          />
+          <g className="svg-origin-center animate-orbit-cw">
+            <path
+              d="M 200 28 A 172 172 0 0 1 350 120"
+              fill="none"
+              stroke="#F3D48B"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+          </g>
+          <g className="svg-origin-center animate-orbit-ccw">
+            <path
+              d="M 50 280 A 172 172 0 0 1 28 200"
+              fill="none"
+              stroke="#E5B968"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeOpacity="0.8"
+            />
+          </g>
+        </svg>
+      </div>
+
+      {/* Mobile Bottom Balanced Row */}
+      <div className="pointer-events-auto absolute bottom-[72px] inset-x-5 sm:hidden z-20 flex items-end justify-between gap-3">
+        <button
+          type="button"
+          aria-label="Explore the cosmos"
+          onClick={onEngage}
+          className="group relative flex flex-col items-center justify-center w-[84px] h-[84px] shrink-0 rounded-full border border-amber-300/40 bg-gradient-to-br from-[#1C160B]/90 via-[#0A0D15]/90 to-[#030407]/95 backdrop-blur-md p-1 shadow-[0_0_24px_rgba(234,192,120,0.22)] active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className="flex flex-col items-center justify-center w-full h-full rounded-full border border-white/10">
+            <svg
+              viewBox="0 0 32 32"
+              className="w-5 h-5 text-[#F5E3B8] mb-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <circle cx="16" cy="16" r="10.5" strokeOpacity="0.45" />
+              <path
+                d="M16 7.5c4.5 0 8 3.5 8 8 0 3.2-2.2 5.5-5 5.5-2.2 0-3.8-1.5-3.8-3.4 0-1.5 1.2-2.6 2.6-2.6"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="font-geometric font-semibold text-[8.5px] tracking-[0.14em] text-[#F4F0E6] uppercase">
+              EXPLORE
+            </span>
+          </div>
+        </button>
+
+        <div className="text-right pointer-events-none">
+          <h1 className="font-geometric font-bold text-[clamp(1.35rem,5.6vw,1.85rem)] uppercase tracking-[-0.02em] text-[#ECE8E0] leading-none">
+            ALDEBARAN
+          </h1>
+          <p className="font-geometric text-[9px] tracking-[0.24em] text-[#D4D0C8] uppercase mt-1">
+            EXPLORE THE COSMOS
+          </p>
+          <p className="font-mono text-[8px] tracking-[0.12em] text-white/45 uppercase mt-0.5">
+            REDEFINING SPATIAL REALITY
+          </p>
+        </div>
       </div>
 
       {/* LEFT TELEMETRY HUD STACK */}
@@ -359,7 +455,7 @@ export default function HorizonPanel({ onEngage }: HorizonPanelProps) {
       </div>
 
       {/* BOTTOM-RIGHT CENTERED 4-LINE HERO STATEMENT */}
-      <div className="pointer-events-none absolute bottom-[4.2%] right-[3.6%] z-20 text-center">
+      <div className="pointer-events-none absolute bottom-[4.2%] right-[3.6%] z-20 text-center hidden sm:block">
         <h2
           className="font-geometric font-bold uppercase leading-[0.91] tracking-[-0.028em]"
           style={{ fontSize: 'clamp(2.1rem, 5.1vw, 4.75rem)' }}

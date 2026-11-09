@@ -421,20 +421,52 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
         </button>
       </div>
 
-      {/* MOBILE / TABLET COMPACT LIST FALLBACK */}
-      <div className="pointer-events-auto lg:hidden absolute inset-x-5 bottom-8 max-h-[45vh] overflow-y-auto rounded-xl border border-white/15 bg-[#050811]/80 backdrop-blur-xl p-4 z-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {PROJECTS.map((project, index) => (
-            <button
-              key={project.code}
-              type="button"
-              onClick={() => onSelect(index)}
-              className="flex items-baseline gap-2.5 py-2 px-3 rounded border border-white/10 bg-white/[0.02] text-left cursor-pointer"
-            >
-              <span className="font-tall text-sm text-[#8E9095]">{project.code}</span>
-              <span className="font-tall font-bold text-2xl text-[#F2F0EB] uppercase">{project.name}</span>
-            </button>
-          ))}
+      {/* MOBILE LUXURY SNAP CAROUSEL (< 1024px) */}
+      <div className="pointer-events-auto lg:hidden absolute inset-x-0 bottom-[68px] z-20">
+        <div className="flex gap-3 px-5 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2">
+          {PROJECTS.map((project, index) => {
+            const isSelected = selectedIndex === index;
+            return (
+              <div
+                key={project.code}
+                onClick={() => onSelect(index)}
+                className={`w-[84vw] max-w-[340px] shrink-0 snap-center forge-card p-3.5 cursor-pointer transition-all duration-300 ${
+                  isSelected ? 'border-amber-300/60 shadow-[0_0_24px_rgba(234,192,120,0.22)]' : ''
+                }`}
+                style={{ '--glow-x': '50%', '--glow-y': '100%', '--rim-angle': '145deg' } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-[8px] tracking-[0.2em] text-amber-200/90 uppercase">
+                    {project.code} // {project.body.orbit ? 'ORBITAL MOON' : 'FLAGSHIP CORE'}
+                  </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isSelected ? 'bg-amber-300 shadow-[0_0_8px_rgba(251,242,213,0.9)]' : 'bg-white/20'
+                    }`}
+                  />
+                </div>
+
+                <h3 className="font-serif text-[18px] text-[#FAF8F4] leading-tight">
+                  {project.name}
+                </h3>
+                <p className="font-sans font-light text-[10.5px] leading-tight text-[#D4D0C8] mt-0.5 line-clamp-1">
+                  {project.subtitle}
+                </p>
+
+                <div className="forge-well mt-2 px-2.5 py-1.5 flex items-center justify-between font-mono text-[7.5px] text-[#D8D4CC]">
+                  {project.metrics.map((m, i) => (
+                    <div key={i}>
+                      <span className="text-white/45 uppercase mr-1">{m.label}:</span>
+                      <span className="text-amber-200">{m.value}</span>
+                    </div>
+                  ))}
+                  <span className="text-amber-200/90 font-semibold underline underline-offset-2 ml-2">
+                    VIEW &rarr;
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

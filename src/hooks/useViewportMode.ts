@@ -42,3 +42,4 @@ export function useViewportMode(): ViewportMode {
 
   return mode;
 }
+
