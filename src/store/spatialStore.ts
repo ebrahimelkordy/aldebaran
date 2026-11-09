@@ -9,6 +9,9 @@ export interface SpatialState {
   selectedProject: number | null;
   activeDiscipline: number | null;
   contextLost: boolean;
+  engineReady: boolean;
+  archiveOpen: boolean;
+  selectedArchiveProject: string | null;
 }
 
 export function readSectorFromHash(): number {
@@ -33,6 +36,9 @@ let state: SpatialState = {
   selectedProject: null,
   activeDiscipline: null,
   contextLost: false,
+  engineReady: false,
+  archiveOpen: false,
+  selectedArchiveProject: null,
 };
 
 const listeners = new Set<() => void>();
@@ -62,6 +68,8 @@ export const spatialStore = {
       warpTarget: target,
       selectedProject: null,
       activeDiscipline: null,
+      archiveOpen: false,
+      selectedArchiveProject: null,
     };
     writeSectorToHash(target);
     emit();
@@ -78,6 +86,8 @@ export const spatialStore = {
       warpTarget: null,
       selectedProject: null,
       activeDiscipline: null,
+      archiveOpen: false,
+      selectedArchiveProject: null,
     };
     writeSectorToHash(sector);
     emit();
@@ -95,6 +105,21 @@ export const spatialStore = {
   setContextLost(contextLost: boolean): void {
     if (state.contextLost === contextLost) return;
     state = { ...state, contextLost };
+    emit();
+  },
+  setEngineReady(engineReady: boolean): void {
+    if (state.engineReady === engineReady) return;
+    state = { ...state, engineReady };
+    emit();
+  },
+  setArchiveOpen(archiveOpen: boolean): void {
+    if (state.archiveOpen === archiveOpen) return;
+    state = { ...state, archiveOpen, selectedArchiveProject: archiveOpen ? state.selectedArchiveProject : null };
+    emit();
+  },
+  setSelectedArchiveProject(selectedArchiveProject: string | null): void {
+    if (state.selectedArchiveProject === selectedArchiveProject) return;
+    state = { ...state, selectedArchiveProject };
     emit();
   },
 };

@@ -154,3 +154,62 @@ export function playWarp() {
     // Audio context not allowed yet
   }
 }
+
+export function playRelativisticShockwave() {
+  if (isMuted) return;
+  try {
+    const audio = getContext();
+    const now = audio.currentTime;
+
+    // 1. Deep Sub-Bass Spacetime Implosion & Expansion (75Hz plunging to 24Hz)
+    const subOsc = audio.createOscillator();
+    const subAmp = audio.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(75, now);
+    subOsc.frequency.exponentialRampToValueAtTime(24, now + 1.6);
+
+    subAmp.gain.setValueAtTime(0.001, now);
+    subAmp.gain.linearRampToValueAtTime(0.09, now + 0.08);
+    subAmp.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+
+    subOsc.connect(subAmp).connect(audio.destination);
+    subOsc.start(now);
+    subOsc.stop(now + 1.65);
+
+    // 2. Gravitational Wave Shear (Lowpass modulated noise burst)
+    const noiseSource = audio.createBufferSource();
+    noiseSource.buffer = getOrCreateNoiseBuffer(audio);
+
+    const noiseFilter = audio.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.setValueAtTime(320, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(45, now + 1.4);
+    noiseFilter.Q.setValueAtTime(4.5, now);
+
+    const noiseAmp = audio.createGain();
+    noiseAmp.gain.setValueAtTime(0.001, now);
+    noiseAmp.gain.linearRampToValueAtTime(0.045, now + 0.06);
+    noiseAmp.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+
+    noiseSource.connect(noiseFilter).connect(noiseAmp).connect(audio.destination);
+    noiseSource.start(now);
+    noiseSource.stop(now + 1.45);
+
+    // 3. Quantum Uplink Crystal Resonance Harmonic (Confirming packet delivery)
+    const pingOsc = audio.createOscillator();
+    const pingAmp = audio.createGain();
+    pingOsc.type = 'sine';
+    pingOsc.frequency.setValueAtTime(1760, now + 0.15); // A6
+    pingOsc.frequency.exponentialRampToValueAtTime(880, now + 0.8);
+
+    pingAmp.gain.setValueAtTime(0.0001, now);
+    pingAmp.gain.setValueAtTime(0.025, now + 0.15);
+    pingAmp.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+
+    pingOsc.connect(pingAmp).connect(audio.destination);
+    pingOsc.start(now + 0.15);
+    pingOsc.stop(now + 0.85);
+  } catch {
+    // Audio context not allowed yet
+  }
+}

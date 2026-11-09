@@ -1,7 +1,5 @@
-import { Color, DoubleSide, Mesh, MeshBasicMaterial, NormalBlending, RingGeometry, Vector3 } from 'three';
-import { PALETTE, SECTORS } from '@/space/constants';
-
-const CHAMPAGNE = new Color(PALETTE.champagne);
+import { Vector3 } from 'three';
+import { SECTORS } from '@/space/constants';
 
 export function createRandom(seed: number) {
   let state = seed;
@@ -15,18 +13,4 @@ export function createRandom(seed: number) {
 
 export function sectorCenter(index: number): Vector3 {
   return new Vector3(...SECTORS[index].position);
-}
-
-export function createShockwaveRing(): Mesh {
-  return new Mesh(
-    new RingGeometry(0.92, 1, 128),
-    new MeshBasicMaterial({
-      color: CHAMPAGNE,
-      transparent: true,
-      opacity: 0.9,
-      blending: NormalBlending,
-      depthWrite: false,
-      side: DoubleSide,
-    }),
-  );
 }

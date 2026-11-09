@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
 import { PROJECTS } from '@/space/content';
 import { useAnchorSubscription } from '@/hooks/useAnchorSubscription';
+import OrbitalCaseStudyModal from '@/components/sectors/orbital/OrbitalCaseStudyModal';
+import ProjectArchiveGrid from '@/components/sectors/orbital/ProjectArchiveGrid';
+import { spatialStore, useSpatialStore } from '@/store/spatialStore';
 
 interface Sector1Anchors {
   ringX: number;
@@ -35,6 +37,7 @@ const SPECTRUM_BARS = [
 
 export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: ArtifactsPanelProps) {
   const selected = selectedIndex === null ? null : PROJECTS[selectedIndex];
+  const archiveOpen = useSpatialStore((s) => s.archiveOpen);
 
   // Live DOM refs for 60fps tracking without React re-renders
   const ringPolyRef = useRef<SVGPolylineElement>(null);
@@ -107,7 +110,7 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
       aria-label="Sector 01 Orbital Systems"
     >
       {/* Top-Left Sector Telemetry Header */}
-      <div className="pointer-events-none absolute top-[13.2%] left-[4.4%] flex items-start gap-8 sm:gap-14 z-20">
+      <div className="pointer-events-none absolute top-[13.2%] left-[4.4%] flex flex-wrap items-center gap-4 sm:gap-8 z-20">
         <div className="font-mono text-[10.5px] sm:text-[11.5px] leading-[1.35] tracking-[0.14em] text-[#ECE8E1] uppercase">
           <div>01 // ORBITAL</div>
           <div>SYSTEMS</div>
@@ -120,6 +123,16 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
             <div>SYNCHRONIZED</div>
           </div>
         </div>
+
+        {/* Outer Asteroid Belt Archive Entry Pill */}
+        <button
+          type="button"
+          onClick={() => spatialStore.setArchiveOpen(true)}
+          className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-300/40 bg-amber-300/[0.08] hover:bg-amber-300/20 hover:border-amber-300 text-amber-200 transition font-mono text-[8.5px] sm:text-[9.5px] tracking-[0.16em] uppercase cursor-pointer shadow-[0_0_15px_rgba(234,192,120,0.15)]"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
+          <span>01-B // FULL SYSTEM ARCHIVE (6)</span>
+        </button>
       </div>
 
       {/* Curved Orbital Ring Telemetry SVG Overlay */}
@@ -273,7 +286,11 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
       </div>
 
       {/* DESKTOP FIXED CASCADING PROJECT TITLES */}
-      <div className="hidden lg:block">
+      <div
+        className={`hidden lg:block transition-all duration-500 ${
+          selected ? 'opacity-15 pointer-events-none' : 'opacity-100'
+        }`}
+      >
         {/* P-00 NOVA PLATFORM */}
         <button
           type="button"
@@ -474,47 +491,19 @@ export default function ArtifactsPanel({ selectedIndex, onSelect, getAnchors }: 
         </div>
       </div>
 
-      {/* INTERACTIVE PROJECT TELEMETRY DRAWER WHEN A PROJECT IS SELECTED */}
+      {/* FLAGSHIP LUNAR CASE STUDY OBSERVATORY MODAL */}
       {selected && selectedIndex !== null && (
-        <aside
-          key={selected.code}
-          className="pointer-events-auto animate-fade-up hud-panel chamfer-clip absolute left-4 right-4 bottom-[68px] lg:left-[4.4%] lg:right-auto lg:bottom-[10%] lg:w-[430px] p-4 sm:p-6 lg:p-7 z-40 shadow-2xl max-h-[42dvh] overflow-y-auto"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-amber-300/90">
-                {selected.code} // {selected.body.orbit ? 'ORBITAL MODULE' : 'FLAGSHIP CORE'}
-              </p>
-              <h3 className="font-tall font-bold mt-1 text-2xl sm:text-3xl lg:text-5xl uppercase tracking-tight text-[#F5F2EB] leading-none">
-                {selected.name}
-              </h3>
-              <p className="mt-1 font-mono text-[10px] sm:text-[11px] text-neutral-400">{selected.subtitle}</p>
-            </div>
-            <button
-              type="button"
-              aria-label="Close project details"
-              onClick={() => onSelect(null)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-neutral-300 transition duration-300 hover:border-amber-300 hover:text-amber-200 hover:bg-amber-300/10 cursor-pointer active:scale-95"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+        <OrbitalCaseStudyModal
+          project={selected}
+          onClose={() => onSelect(null)}
+        />
+      )}
 
-          <p className="mt-3 sm:mt-5 font-sans text-xs sm:text-sm leading-relaxed text-neutral-300">{selected.detail}</p>
-
-          <dl className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-5 border-t border-white/10 pt-3 sm:pt-5">
-            {selected.metrics.map((metric) => (
-              <div key={metric.label}>
-                <dt className="font-mono text-[9px] sm:text-[9.5px] uppercase tracking-[0.18em] text-neutral-400">
-                  {metric.label}
-                </dt>
-                <dd className="font-tall font-bold mt-0.5 sm:mt-1 text-xl sm:text-2xl text-amber-200 tracking-wide">
-                  {metric.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </aside>
+      {/* TIER B: DEEP ASTEROID BELT PORTFOLIO ARCHIVE MODAL */}
+      {archiveOpen && (
+        <ProjectArchiveGrid
+          onClose={() => spatialStore.setArchiveOpen(false)}
+        />
       )}
     </section>
   );

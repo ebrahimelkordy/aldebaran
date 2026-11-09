@@ -1,7 +1,5 @@
 import {
-  Material,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   Raycaster,
   Scene,
@@ -21,14 +19,15 @@ import {
   WARP_DURATION,
   WARP_FOV_BOOST,
 } from '@/space/constants';
-import { createShockwaveRing, sectorCenter } from '@/space/sceneBuilders';
+import { sectorCenter } from '@/space/sceneBuilders';
+import { createRelativisticShockwave, type RelativisticShockwaveInstance } from '@/space/shockwaveShader';
 import { buildPlanetSystem } from '@/space/planetSystem';
 import { buildBlackHole } from '@/space/blackHole';
 import { buildStarClusters, type Sector2ScreenAnchors } from '@/space/starClusters';
 import { buildMainStar } from '@/space/mainStar';
 import { buildSkyDome } from '@/space/skyDome';
 import { buildStarField } from '@/space/starField';
-import { suspendAudioForBackground } from '@/space/audio';
+import { playRelativisticShockwave, suspendAudioForBackground } from '@/space/audio';
 import { spatialStore } from '@/store/spatialStore';
 import { anchorBus } from '@/engine/anchorBus';
 import type { MoonScreenAnchor, QualitySettings, QualityTier } from '@/engine/types';
@@ -36,7 +35,6 @@ import { detectDeviceTier, FPSMonitor, QUALITY_TIERS } from '@/engine/quality';
 
 const UP = new Vector3(0, 1, 0);
 const TAIL_LENGTH = 3800;
-const SHOCKWAVE_DURATION = 1.4;
 const DRAG_YAW = 0.003;
 const DRAG_PITCH = 0.002;
 const MAX_PITCH = 0.5;
@@ -61,11 +59,6 @@ interface WarpState {
   target: number;
   elapsed: number;
   bankingSign: number;
-}
-
-interface Shockwave {
-  mesh: Mesh;
-  age: number;
 }
 
 interface PressState {
@@ -117,7 +110,9 @@ export class Universe {
   private currentSector = 0;
   private focusIndex: number | null = null;
   private hoverIndex: number | null = null;
-  private shockwaves: Shockwave[] = [];
+  private shockwaves: RelativisticShockwaveInstance[] = [];
+  private recoilIntensity = 0;
+  private recoilTime = 0;
   private shake = 0;
   private time = 0;
   private lastFrame = performance.now();
@@ -307,11 +302,15 @@ export class Universe {
   }
 
   emitShockwave() {
-    const mesh = createShockwaveRing();
-    mesh.position.copy(sectorCenter(3));
-    this.scene.add(mesh);
-    this.shockwaves.push({ mesh, age: 0 });
-    this.shake = 1;
+    playRelativisticShockwave();
+    const wave = createRelativisticShockwave(2.2, 1250);
+    wave.mesh.position.copy(sectorCenter(3));
+    wave.mesh.lookAt(this.camera.position);
+    this.scene.add(wave.mesh);
+    this.shockwaves.push(wave);
+    this.recoilIntensity = 1.0;
+    this.recoilTime = 0;
+    this.shake = 0.5;
   }
 
   dispose() {
@@ -635,11 +634,29 @@ export class Universe {
       this.camera.up.set(0, 1, 0);
     }
 
-    this.shake = Math.max(0, this.shake - dt * 1.2);
-    const jitter = this.shake * 12;
-    this.camera.position.copy(this.camPos).add(
-      new Vector3((Math.random() - 0.5) * jitter, (Math.random() - 0.5) * jitter, 0),
-    );
+    this.shake = Math.max(0, this.shake - dt * 1.5);
+    const jitter = this.shake * 8;
+    this.camera.position.copy(this.camPos);
+
+    if (this.shake > 0) {
+      this.camera.position.add(
+        new Vector3((Math.random() - 0.5) * jitter, (Math.random() - 0.5) * jitter, 0),
+      );
+    }
+
+    // Hydrodynamic Spring Recoil from Gravitational Shockwave
+    if (this.recoilIntensity > 0.001) {
+      this.recoilTime += dt;
+      const decay = Math.exp(-this.recoilTime * 4.2);
+      const oscillation = Math.cos(this.recoilTime * 14.0);
+      const recoilOffset = decay * oscillation * this.recoilIntensity * 28.0;
+
+      const recoilDir = this.camera.position.clone().sub(sectorCenter(3)).normalize();
+      this.camera.position.addScaledVector(recoilDir, recoilOffset);
+
+      this.recoilIntensity = Math.max(0, this.recoilIntensity - dt * 1.1);
+    }
+
     this.camera.lookAt(this.camera.position.clone().add(dir));
     this.camera.fov = REST_FOV + WARP_FOV_BOOST * Math.pow(this.warpIntensity, 1.3);
     this.camera.updateProjectionMatrix();
@@ -694,15 +711,19 @@ export class Universe {
   private updateShockwaves(dt: number) {
     this.shockwaves = this.shockwaves.filter((wave) => {
       wave.age += dt;
-      const t = wave.age / SHOCKWAVE_DURATION;
+      const t = Math.min(1.0, wave.age / wave.duration);
       if (t >= 1) {
         this.scene.remove(wave.mesh);
         wave.mesh.geometry.dispose();
-        (wave.mesh.material as Material).dispose();
+        wave.mesh.material.dispose();
         return false;
       }
-      wave.mesh.scale.setScalar(60 + 1100 * (1 - Math.pow(1 - t, 3)));
-      (wave.mesh.material as MeshBasicMaterial).opacity = 0.9 * (1 - t);
+      const mat = wave.mesh.material;
+      mat.uniforms.uTime.value = this.time;
+      mat.uniforms.uProgress.value = t;
+
+      const scale = 30 + wave.maxRadius * (t * (2.0 - t));
+      wave.mesh.scale.set(scale, scale, 1.0);
       wave.mesh.lookAt(this.camera.position);
       return true;
     });
@@ -738,6 +759,9 @@ export class Universe {
       if (this.currentSector === 0) {
         this.aldebaran.renderOverlay(this.renderer);
       }
+
+      // Signal to UI that GPU initial compilation and first frame are complete
+      spatialStore.setEngineReady(true);
 
       // 2. Non-blocking asynchronous compilation of remaining sectors via requestIdleCallback/timer slices
       const otherSectors = [0, 1, 2, 3].filter((i) => i !== this.currentSector);

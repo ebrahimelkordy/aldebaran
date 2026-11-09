@@ -45,6 +45,12 @@ const DUST_INNER = 205;
 const DUST_OUTER = 540;
 const DUST_THICKNESS = 24;
 
+// Deep Outer Asteroid Belt (Kuiper Ring) outside moon orbits (r >= 720)
+const ASTEROID_COUNT = LOW_END_DEVICE ? 450 : 950;
+const ASTEROID_BELT_INNER = 720;
+const ASTEROID_BELT_OUTER = 940;
+const ASTEROID_BELT_THICKNESS = 42;
+
 // Outer ring radius = 150 * 2.64 = 396. Every moon orbits strictly outside r >= 450 (zero ring intersection!)
 const RING_INNER = 1.36;
 const RING_OUTER = 2.64;
@@ -354,6 +360,26 @@ function createDust() {
   return createStarPoints(samples);
 }
 
+function createAsteroidBelt() {
+  const random = createRandom(77);
+  const samples = Array.from({ length: ASTEROID_COUNT }, (): StarSample => {
+    const angle = random() * Math.PI * 2;
+    const radius =
+      ASTEROID_BELT_INNER + (ASTEROID_BELT_OUTER - ASTEROID_BELT_INNER) * Math.sqrt(random());
+    return {
+      position: [
+        Math.cos(angle) * radius,
+        (random() - 0.5) * ASTEROID_BELT_THICKNESS,
+        Math.sin(angle) * radius,
+      ],
+      color: random() > 0.35 ? [0.94, 0.78, 0.48] : [0.68, 0.65, 0.72],
+      size: 1.0 + Math.pow(random(), 3) * 2.6,
+      bright: 0.22 + random() * 0.52,
+    };
+  });
+  return createStarPoints(samples);
+}
+
 export function buildPlanetSystem(): PlanetSystem {
   const group = new Group();
   group.position.copy(SYSTEM_CENTER);
@@ -384,6 +410,9 @@ export function buildPlanetSystem(): PlanetSystem {
 
   const dust = createDust();
   tiltRig.add(dust.object);
+
+  const asteroidBelt = createAsteroidBelt();
+  tiltRig.add(asteroidBelt.object);
 
   const orbitLines: LineLoop[] = [];
 
@@ -460,6 +489,12 @@ export function buildPlanetSystem(): PlanetSystem {
       }
       dust.object.rotation.y = time * 0.015;
 
+      asteroidBelt.material.uniforms.uTime.value = time;
+      if (asteroidBelt.material.uniforms.uOpacity) {
+        asteroidBelt.material.uniforms.uOpacity.value = opacity * 0.85;
+      }
+      asteroidBelt.object.rotation.y = time * 0.007;
+
       orbitLines.forEach((line) => {
         (line.material as LineBasicMaterial).opacity = 0.06 * opacity;
       });
@@ -515,6 +550,8 @@ export function buildPlanetSystem(): PlanetSystem {
       selectedWork.texture?.dispose();
       dust.object?.geometry?.dispose();
       dust.material?.dispose();
+      asteroidBelt.object?.geometry?.dispose();
+      asteroidBelt.material?.dispose();
     },
   };
 }
