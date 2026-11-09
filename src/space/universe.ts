@@ -323,7 +323,6 @@ export class Universe {
     } else {
       this.skyDome.material.dispose();
     }
-    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

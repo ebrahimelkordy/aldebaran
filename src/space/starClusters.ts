@@ -369,23 +369,25 @@ export function buildStarClusters() {
       astrolabe.update(time, opacity, activeDiscipline);
     },
     refreshTextures() {
-      theForgeTitle.texture.needsUpdate = true;
+      if (theForgeTitle.texture) {
+        theForgeTitle.texture.needsUpdate = true;
+      }
     },
     dispose() {
-      nebulaGeom.dispose();
-      nebulaMat.dispose();
-      bgStars.geom.dispose();
-      bgStars.mat.dispose();
-      fgStars.geom.dispose();
-      fgStars.mat.dispose();
-      stardust.object.geometry.dispose();
-      stardust.material.dispose();
-      theForgeTitle.mesh.geometry.dispose();
-      theForgeTitle.material.dispose();
-      theForgeTitle.texture.dispose();
-      veilGeom.dispose();
-      veilMat.dispose();
-      astrolabe.dispose();
+      nebulaGeom?.dispose();
+      nebulaMat?.dispose();
+      bgStars?.geom?.dispose();
+      bgStars?.mat?.dispose();
+      fgStars?.geom?.dispose();
+      fgStars?.mat?.dispose();
+      stardust?.object?.geometry?.dispose();
+      stardust?.material?.dispose();
+      theForgeTitle?.mesh?.geometry?.dispose();
+      theForgeTitle?.material?.dispose();
+      theForgeTitle?.texture?.dispose();
+      veilGeom?.dispose();
+      veilMat?.dispose();
+      astrolabe?.dispose();
     },
   };
 }

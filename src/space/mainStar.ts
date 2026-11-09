@@ -367,8 +367,8 @@ export function buildMainStar() {
       renderer.autoClear = prevAutoClear;
     },
     dispose() {
-      fsQuad.dispose();
-      material.dispose();
+      fsQuad?.dispose();
+      material?.dispose();
     },
   };
 }

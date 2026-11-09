@@ -46,7 +46,11 @@ export default function Experience() {
     );
     universeRef.current = universe;
     return () => {
-      universe.dispose();
+      try {
+        universe.dispose();
+      } catch (err) {
+        console.warn('Universe disposal error caught:', err);
+      }
       universeRef.current = null;
     };
   }, []);

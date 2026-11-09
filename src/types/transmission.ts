@@ -24,3 +24,4 @@ export type TransmissionResponse =
       code: 'VALIDATION_ERROR' | 'RATE_LIMITED' | 'CONFIG_ERROR' | 'UPSTREAM_ERROR';
       error: string;
     };
+

@@ -27,3 +27,4 @@ export default async function handler(request: Request): Promise<Response> {
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
+

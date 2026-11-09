@@ -143,10 +143,10 @@ export function buildStarField() {
       shared.uTail.value.copy(tail);
     },
     dispose() {
-      pointGeometry.dispose();
-      pointMaterial.dispose();
-      streakGeometry.dispose();
-      streakMaterial.dispose();
+      pointGeometry?.dispose();
+      pointMaterial?.dispose();
+      streakGeometry?.dispose();
+      streakMaterial?.dispose();
     },
   };
 }

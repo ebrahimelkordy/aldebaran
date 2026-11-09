@@ -321,7 +321,7 @@ function createSelectedWorkPlane() {
 
   const mesh = new Mesh(new PlaneGeometry(1, 1), material);
   mesh.renderOrder = 1;
-  return { mesh, material };
+  return { mesh, material, texture, drawText };
 }
 
 function createSubtleOrbitArc(semiMajor: number, semiMinor = semiMajor, opacity = 0.065): LineLoop {
@@ -482,7 +482,10 @@ export function buildPlanetSystem(): PlanetSystem {
       return ringBeacon.getWorldPosition(target);
     },
     refreshTextures() {
-      selectedWork.texture.needsUpdate = true;
+      selectedWork.drawText?.();
+      if (selectedWork.texture) {
+        selectedWork.texture.needsUpdate = true;
+      }
     },
     dispose() {
       group.traverse((child) => {
@@ -495,9 +498,9 @@ export function buildPlanetSystem(): PlanetSystem {
           else mat.dispose();
         }
       });
-      selectedWork.texture.dispose();
-      dust.object.geometry.dispose();
-      dust.material.dispose();
+      selectedWork.texture?.dispose();
+      dust.object?.geometry?.dispose();
+      dust.material?.dispose();
     },
   };
 }

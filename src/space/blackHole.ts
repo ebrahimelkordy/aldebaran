@@ -212,14 +212,14 @@ export function buildBlackHole() {
       draw();
     },
     dispose() {
-      lensPlane.geometry.dispose();
-      (lensPlane.material as ShaderMaterial).dispose();
-      qMesh.geometry.dispose();
-      qMat.dispose();
-      qTex.dispose();
-      uMesh.geometry.dispose();
-      uMat.dispose();
-      uTex.dispose();
+      lensPlane?.geometry?.dispose();
+      (lensPlane?.material as ShaderMaterial)?.dispose();
+      qMesh?.geometry?.dispose();
+      qMat?.dispose();
+      qTex?.dispose();
+      uMesh?.geometry?.dispose();
+      uMat?.dispose();
+      uTex?.dispose();
     },
   };
 }
